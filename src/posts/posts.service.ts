@@ -1,15 +1,15 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 import { InjectKnex, Knex } from 'nestjs-knex';
 
 @Injectable()
-export class UsersService {
+export class PostsService {
   constructor(@InjectKnex() private readonly knex: Knex) {}
-  async create(createUserDto: CreateUserDto) {
+  async create(createPostDto: CreatePostDto) {
     try {
-      const user = await this.knex.table('users').insert(createUserDto);
-      return user;
+      const post = await this.knex.table('posts').insert(createPostDto);
+      return post;
     } catch (error) {
       throw new HttpException(error, 400);
     }
@@ -17,8 +17,8 @@ export class UsersService {
 
   async findAll() {
     try {
-      const users = await this.knex.table('users');
-      return users;
+      const posts = await this.knex.table('posts');
+      return posts;
     } catch (error) {
       throw new HttpException(error, 400);
     }
@@ -26,23 +26,23 @@ export class UsersService {
 
   async findOne(id: number) {
     try {
-      const user = await this.knex
-        .table('users')
+      const post = await this.knex
+        .table('posts')
         .select('*')
         .where({ id })
         .first();
-      return user;
+      return post;
     } catch (error) {
       throw new HttpException(error, 400);
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updatePostDto: UpdatePostDto) {
     try {
       const updatedRecord = await this.knex
-        .table('users')
+        .table('posts')
         .where({ id })
-        .update(updateUserDto);
+        .update(updatePostDto);
       return updatedRecord;
     } catch (error) {
       throw new HttpException(error, 400);
@@ -52,7 +52,7 @@ export class UsersService {
   async remove(id: number) {
     try {
       const deletedRecord = await this.knex
-        .table('users')
+        .table('posts')
         .where({ id })
         .delete();
       return deletedRecord;

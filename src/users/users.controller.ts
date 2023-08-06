@@ -10,25 +10,13 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { InjectKnex, Knex } from 'nestjs-knex';
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    @InjectKnex() private readonly knex: Knex,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    if (!(await this.knex.schema.hasTable('users'))) {
-      await this.knex.schema.createTable('users', (table) => {
-        table.increments('id').primary();
-        table.string('name');
-      });
-    }
-    await this.knex.table('users').insert({ name: 'Name' });
-    const users = await this.knex.table('users');
-    return { users };
+    return this.usersService.create(createUserDto);
   }
 
   @Get()
