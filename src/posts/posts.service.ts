@@ -8,7 +8,7 @@ export class PostsService {
   constructor(@InjectKnex() private readonly knex: Knex) {}
   async create(createPostDto: CreatePostDto) {
     try {
-      const post = await this.knex.table('posts').insert(createPostDto);
+      const [post] = await this.knex.table('posts').insert(createPostDto, '*');
       return post;
     } catch (error) {
       throw new HttpException(error, 400);
@@ -42,7 +42,7 @@ export class PostsService {
       const updatedRecord = await this.knex
         .table('posts')
         .where({ id })
-        .update(updatePostDto);
+        .update(updatePostDto, '*');
       return updatedRecord;
     } catch (error) {
       throw new HttpException(error, 400);
@@ -54,7 +54,7 @@ export class PostsService {
       const deletedRecord = await this.knex
         .table('posts')
         .where({ id })
-        .delete();
+        .delete('*');
       return deletedRecord;
     } catch (error) {
       throw new HttpException(error, 400);
