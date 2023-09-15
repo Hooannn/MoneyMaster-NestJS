@@ -1,5 +1,5 @@
 import { KnexModule, KnexModuleOptions } from 'nestjs-knex';
-import { knexConfig } from '../../knexfile';
+import * as knexConfig from '../../knexfile';
 const knexModuleOptions: KnexModuleOptions = {
   config: knexConfig['production'],
 };
