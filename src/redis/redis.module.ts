@@ -7,11 +7,12 @@ import config from 'src/configs';
     {
       provide: 'REDIS',
       useFactory: () => {
-        return new Redis({
+        const client = new Redis({
           host: config.REDIS_HOST,
           port: parseInt(config.REDIS_PORT),
           password: config.REDIS_PASSWORD,
         });
+        return client;
       },
     },
   ],

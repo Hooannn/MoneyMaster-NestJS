@@ -46,14 +46,13 @@ export class UsersService {
         .first();
       return user;
     } catch (error) {
-      console.log('findOneByEmail', error);
       throw new HttpException(error, 400);
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: Partial<UpdateUserDto>) {
     try {
-      const updatedRecord = await this.knex
+      const [updatedRecord] = await this.knex
         .table('users')
         .where({ id })
         .update(updateUserDto, '*');

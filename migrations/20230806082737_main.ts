@@ -13,27 +13,6 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamps(true, true);
   });
 
-  await knex.schema.createTable('categories', function (table) {
-    table.increments('id');
-    table.string('title', 255).notNullable();
-    table.text('content').notNullable();
-    table.boolean('published').defaultTo(false);
-    table.timestamps(true, true);
-  });
-  await knex.schema.createTable('posts', function (table) {
-    table.increments('id');
-    table.integer('user_id').unsigned().notNullable();
-    table.foreign('user_id').references('users.id');
-    table.integer('category_id').unsigned().notNullable();
-    table.foreign('category_id').references('categories.id');
-    table.string('title', 255).notNullable();
-    table.text('content').notNullable();
-    table.string('thumbnail').nullable();
-    table.boolean('published').defaultTo(false);
-    table.boolean('is_drafted').defaultTo(false);
-    table.date('published_at').nullable();
-    table.timestamps(true, true);
-  });
   await knex.schema.createTable('notifications', function (table) {
     table.increments('id');
     table.integer('user_id').unsigned().notNullable();
@@ -45,11 +24,7 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  return knex.schema
-    .dropTable('notifications')
-    .dropTable('posts')
-    .dropTable('users')
-    .dropTable('categories');
+  return knex.schema.dropTable('notifications').dropTable('users');
 }
 
 export const config = { transaction: false };

@@ -13,12 +13,14 @@ import { isEmail } from 'class-validator';
 import ResponseBuilder from 'src/utils/response';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { Public } from './auth.guard';
 
 @Controller('auth')
 export class AuthController {
   private readonly responseBuilder = new ResponseBuilder<any>();
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Get()
   async checkUser(@Query() checkUserDto: CheckUserDto) {
     const email = Buffer.from(checkUserDto.email, 'base64').toString('ascii');
@@ -40,6 +42,7 @@ export class AuthController {
       .build();
   }
 
+  @Public()
   @Post('sign-in')
   async signIn(@Body() signInDto: SignInDto) {
     const user = await this.authService.signIn(signInDto);
@@ -51,6 +54,7 @@ export class AuthController {
       .build();
   }
 
+  @Public()
   @Post('sign-up')
   async signUp(@Body() signUpDto: SignUpDto) {
     const user = await this.authService.signUp(signUpDto);
@@ -59,6 +63,18 @@ export class AuthController {
       .success(true)
       .data(user)
       .message('Signed up successfully')
+      .build();
+  }
+
+  @Public()
+  @Post('sign-up/password')
+  async createPassword(@Body() checkUserDto: CheckUserDto) {
+    await this.authService.createPassword(checkUserDto);
+    return this.responseBuilder
+      .code(200)
+      .success(true)
+      .data(null)
+      .message('Password has been sent successfully')
       .build();
   }
 }
