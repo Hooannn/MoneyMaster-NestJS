@@ -3,20 +3,22 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { Knex as KnexModule } from './database';
-import { PostsModule } from './posts/posts.module';
-import { CategoriesModule } from './categories/categories.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LoggerModule } from 'nestjs-pino';
+import { AuthModule } from './auth/auth.module';
+import { RedisModule } from './redis/redis.module';
+import { MailerService } from './mailer/mailer.service';
+
 @Module({
   imports: [
     UsersModule,
     KnexModule,
-    PostsModule,
-    CategoriesModule,
     NotificationsModule,
     LoggerModule.forRoot(),
+    AuthModule,
+    RedisModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, MailerService],
 })
 export class AppModule {}

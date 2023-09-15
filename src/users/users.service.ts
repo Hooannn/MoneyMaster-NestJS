@@ -37,6 +37,20 @@ export class UsersService {
     }
   }
 
+  async findOneByEmail(email: string) {
+    try {
+      const user = await this.knex
+        .table('users')
+        .select('*')
+        .where({ email })
+        .first();
+      return user;
+    } catch (error) {
+      console.log('findOneByEmail', error);
+      throw new HttpException(error, 400);
+    }
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       const updatedRecord = await this.knex
