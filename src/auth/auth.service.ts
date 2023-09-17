@@ -4,7 +4,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import axios from 'axios';
 import { InjectKnex, Knex } from 'nestjs-knex';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -17,9 +16,12 @@ import config from 'src/configs';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { registerTemplate } from 'src/mailer/templates/password';
 import { RefreshDto } from './dto/refresh-dto';
+import { HttpService } from '@nestjs/axios';
+import { Role } from './auth.roles';
 
 export interface JwtPayloads {
   userId: string;
+  roles: [Role];
 }
 
 @Injectable()
@@ -30,37 +32,31 @@ export class AuthService {
     private usersService: UsersService,
     private mailerService: MailerService,
     private jwtService: JwtService,
+    private readonly httpService: HttpService,
   ) {}
-
-  async checkUser(params: { email: string }) {
-    try {
-      const user = await this.knex
-        .table('users')
-        .select('first_name', 'last_name', 'id', 'email')
-        .where({ email: params.email })
-        .first();
-      return user;
-    } catch (error) {
-      throw new HttpException(error, 400);
-    }
-  }
 
   async signIn(signInDto: SignInDto) {
     try {
-      const user = await this.usersService.findOneByEmail(signInDto.email);
-      if (!user) throw new HttpException('Unregistered email address', 400);
+      const requestUser = await this.usersService.findPassword(signInDto.email);
+      if (!requestUser)
+        throw new HttpException('Unregistered email address', 400);
       const isPasswordMatched = compareSync(
-        signInDto.password.toString(),
-        user.password.toString(),
+        signInDto.password?.toString(),
+        requestUser.password?.toString(),
       );
+      const authenticatedUser = await this.usersService.findOne(requestUser.id);
       if (!isPasswordMatched)
         throw new UnauthorizedException('Invalid password');
 
       const { access_token, refresh_token } = await this.getCredentials(
-        user.id,
+        authenticatedUser.id,
+        authenticatedUser.roles,
       );
 
-      return { user, credentials: { access_token, refresh_token } };
+      return {
+        user: authenticatedUser,
+        credentials: { access_token, refresh_token },
+      };
     } catch (error) {
       throw new HttpException(error, 400);
     }
@@ -86,6 +82,7 @@ export class AuthService {
 
       const { access_token, refresh_token } = await this.getCredentials(
         user.id,
+        user.roles,
       );
 
       this.usersService.update(user.id, {
@@ -141,6 +138,7 @@ export class AuthService {
 
       const { access_token, refresh_token } = await this.getCredentials(
         createdUser.id,
+        user.roles,
       );
 
       return {
@@ -164,8 +162,10 @@ export class AuthService {
       await this.jwtService.verifyAsync(legalToken, {
         secret: config.REFRESH_TOKEN_SECRET,
       });
+      const legalUser = await this.usersService.findOne(parseInt(belongsTo));
       const { access_token, refresh_token } = await this.getCredentials(
-        belongsTo,
+        legalUser.id,
+        legalUser.roles,
       );
       return { credentials: { access_token, refresh_token } };
     } catch (error) {
@@ -182,6 +182,7 @@ export class AuthService {
     if (user) {
       const { access_token, refresh_token } = await this.getCredentials(
         user.id,
+        user.roles,
       );
       return {
         user,
@@ -204,6 +205,7 @@ export class AuthService {
 
       const { access_token, refresh_token } = await this.getCredentials(
         createdUser.id,
+        createdUser.roles,
       );
 
       return {
@@ -215,7 +217,7 @@ export class AuthService {
 
   private async getPublicGoogleUser(googleAccessToken: string) {
     try {
-      const { data } = await axios.get(
+      const { data } = await this.httpService.axiosRef.get(
         'https://www.googleapis.com/oauth2/v3/userinfo',
         {
           headers: {
@@ -229,11 +231,14 @@ export class AuthService {
     }
   }
 
-  private async getCredentials(userId: string): Promise<{
+  private async getCredentials(
+    userId: string,
+    roles: [Role],
+  ): Promise<{
     access_token: string;
     refresh_token: string;
   }> {
-    const access_token = this.generateAccessToken(userId);
+    const access_token = this.generateAccessToken(userId, roles);
     const refresh_token = this.generateRefreshToken(userId);
     await this.redisClient.setex(
       `refresh_token:${userId}`,
@@ -243,9 +248,9 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
-  private generateAccessToken(userId: string) {
+  private generateAccessToken(userId: string, roles: [Role]) {
     return this.jwtService.sign(
-      { userId },
+      { userId, roles },
       {
         secret: config.ACCESS_TOKEN_SECRET,
         expiresIn: config.ACCESS_TOKEN_LIFE,
@@ -258,7 +263,7 @@ export class AuthService {
       { userId },
       {
         secret: config.REFRESH_TOKEN_SECRET,
-        expiresIn: config.REFRESH_TOKEN_LIFE,
+        expiresIn: config.REFRESH_TOKEN_LIFE_D,
       },
     );
   }

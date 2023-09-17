@@ -15,11 +15,15 @@ import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { Public } from './auth.guard';
 import { RefreshDto } from './dto/refresh-dto';
+import { UsersService } from 'src/users/users.service';
 
 @Controller('auth')
 export class AuthController {
   private readonly responseBuilder = new ResponseBuilder<any>();
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private usersService: UsersService,
+  ) {}
 
   @Public()
   @Get()
@@ -28,7 +32,7 @@ export class AuthController {
     if (!isEmail(email)) {
       throw new HttpException('Invalid email address', HttpStatus.BAD_REQUEST);
     }
-    const user = await this.authService.checkUser({ email });
+    const user = await this.usersService.checkUser({ email });
     if (!user) {
       throw new HttpException(
         'Unregistered email address',

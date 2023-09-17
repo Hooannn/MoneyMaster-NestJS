@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import config from 'src/configs';
+import { ROLES_KEY, Role } from './auth.roles';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -19,6 +20,11 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
     if (isPublic) {
       // 💡 See this condition
       return true;
@@ -33,6 +39,9 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: config.ACCESS_TOKEN_SECRET,
       });
+      if (requiredRoles?.length) {
+        return requiredRoles.some((role) => payload.roles?.includes(role));
+      }
       request['auth'] = payload;
     } catch {
       throw new UnauthorizedException('Invalid access token');

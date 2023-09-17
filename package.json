@@ -28,6 +28,7 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^7.1.11",
     "bcrypt": "^5.0.1",
     "knex": "^2.5.1",
     "nestjs-knex": "^2.0.0",
@@ -37,6 +38,7 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@nestjs/axios": "^3.0.0",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/jwt": "^10.1.1",
     "@nestjs/schematics": "^10.0.0",
@@ -85,5 +87,9 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "resolutions": {
+    "wrap-ansi": "7.0.0",
+    "string-width": "4.1.0"
   }
 }
