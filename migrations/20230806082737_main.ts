@@ -20,10 +20,30 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('read').defaultTo(false);
     table.timestamps(true, true);
   });
+
+  await knex.schema.createTable('wallets', function (table) {
+    table.increments('id');
+    table.timestamps(true, true);
+  });
+
+  await knex.schema.createTable('transactions', function (table) {
+    table.increments('id');
+    table.timestamps(true, true);
+  });
+
+  await knex.schema.createTable('categories', function (table) {
+    table.increments('id');
+    table.timestamps(true, true);
+  });
 }
 
 export async function down(knex: Knex): Promise<void> {
-  return knex.schema.dropTable('notifications').dropTable('users');
+  return knex.schema
+    .dropTable('notifications')
+    .dropTable('users')
+    .dropTable('wallets')
+    .dropTable('transactions')
+    .dropTable('categories');
 }
 
 export const config = { transaction: false };
