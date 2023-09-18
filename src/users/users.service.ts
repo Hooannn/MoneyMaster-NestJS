@@ -3,11 +3,21 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectKnex, Knex } from 'nestjs-knex';
 import { Role } from 'src/auth/auth.roles';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectKnex() private readonly knex: Knex) {}
-  private SELECTED_COLUMNS: string[] = [
+  private SELECTED_COLUMNS: [
+    'id',
+    'first_name',
+    'last_name',
+    'avatar',
+    'email',
+    'roles',
+    'created_at',
+    'updated_at',
+  ] = [
     'id',
     'first_name',
     'last_name',
@@ -20,10 +30,9 @@ export class UsersService {
 
   async checkUser(params: { email: string }) {
     try {
-      const user = await this.knex
-        .table('users')
+      const user = await this.knex<User>('users')
         .select('first_name', 'last_name', 'id', 'email')
-        .where({ email: params.email })
+        .where('email', params.email)
         .first();
       return user;
     } catch (error) {
@@ -33,13 +42,11 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const defaultRoles: [Role] = [Role.User];
-      const [user] = await this.knex
-        .table('users')
-        .insert(
-          { ...createUserDto, roles: defaultRoles },
-          this.SELECTED_COLUMNS,
-        );
+      const defaultRoles: Role[] = [Role.User];
+      const [user] = await this.knex<User>('users').insert(
+        { ...createUserDto, roles: defaultRoles },
+        this.SELECTED_COLUMNS,
+      );
       return user;
     } catch (error) {
       throw new HttpException(error, 400);
@@ -48,8 +55,7 @@ export class UsersService {
 
   async findAll() {
     try {
-      const users = await this.knex
-        .table('users')
+      const users = await this.knex<User>('users')
         .column(this.SELECTED_COLUMNS)
         .select();
       return users;
@@ -60,11 +66,10 @@ export class UsersService {
 
   async findOne(id: number) {
     try {
-      const user = await this.knex
-        .table('users')
+      const user = await this.knex<User>('users')
         .column(this.SELECTED_COLUMNS)
         .select()
-        .where({ id })
+        .where('id', id)
         .first();
       return user;
     } catch (error) {
@@ -74,8 +79,7 @@ export class UsersService {
 
   async findOneByEmail(email: string) {
     try {
-      const user = await this.knex
-        .table('users')
+      const user = await this.knex<User>('users')
         .column(this.SELECTED_COLUMNS)
         .select()
         .where({ email })
@@ -88,10 +92,8 @@ export class UsersService {
 
   async findPassword(email: string) {
     try {
-      const user = await this.knex
-        .table('users')
-        .column(['id', 'password'])
-        .select()
+      const user = await this.knex<User>('users')
+        .select('id', 'password')
         .where({ email })
         .first();
       return user;
@@ -102,9 +104,8 @@ export class UsersService {
 
   async update(id: number, updateUserDto: Partial<UpdateUserDto>) {
     try {
-      const [updatedRecord] = await this.knex
-        .table('users')
-        .where({ id })
+      const [updatedRecord] = await this.knex<User>('users')
+        .where('id', id)
         .update(updateUserDto, this.SELECTED_COLUMNS);
       return updatedRecord;
     } catch (error) {
@@ -114,9 +115,8 @@ export class UsersService {
 
   async remove(id: number) {
     try {
-      const [deletedRecord] = await this.knex
-        .table('users')
-        .where({ id })
+      const [deletedRecord] = await this.knex<User>('users')
+        .where('id', id)
         .delete(this.SELECTED_COLUMNS);
       return deletedRecord;
     } catch (error) {

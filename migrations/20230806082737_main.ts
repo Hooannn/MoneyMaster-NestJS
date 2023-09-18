@@ -39,11 +39,14 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   return knex.schema
-    .dropTable('notifications')
-    .dropTable('users')
-    .dropTable('wallets')
-    .dropTable('transactions')
-    .dropTable('categories');
+    .dropTableIfExists('notifications')
+    .dropTableIfExists('users')
+    .dropTableIfExists('wallets')
+    .dropTableIfExists('transactions')
+    .dropTableIfExists('categories')
+    .dropTableIfExists('wallet_types')
+    .dropTableIfExists('wallet_policies')
+    .dropTableIfExists('category_groups');
 }
 
 export const config = { transaction: false };

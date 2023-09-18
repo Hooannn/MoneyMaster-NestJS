@@ -4,7 +4,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectKnex, Knex } from 'nestjs-knex';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { SignInDto } from './dto/sign-in.dto';
@@ -27,7 +26,6 @@ export interface JwtPayloads {
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectKnex() private readonly knex: Knex,
     @Inject('REDIS') private readonly redisClient: Redis,
     private usersService: UsersService,
     private mailerService: MailerService,
@@ -138,7 +136,7 @@ export class AuthService {
 
       const { access_token, refresh_token } = await this.getCredentials(
         createdUser.id,
-        user.roles,
+        createdUser.roles,
       );
 
       return {
@@ -153,13 +151,15 @@ export class AuthService {
   async refresh(refreshDto: RefreshDto) {
     try {
       const requestToken = refreshDto.refreshToken;
-      const tokenPayload = this.jwtService.decode(requestToken) as JwtPayloads;
+      const tokenPayload = (await this.jwtService.verifyAsync(requestToken, {
+        secret: config.REFRESH_TOKEN_SECRET,
+      })) as JwtPayloads;
       const belongsTo = tokenPayload?.userId;
       if (!belongsTo) throw new UnauthorizedException('Invalid refresh token');
       const legalToken = await this.redisClient.get(
         `refresh_token:${belongsTo}`,
       );
-      await this.jwtService.verifyAsync(legalToken, {
+      await this.jwtService.verifyAsync(legalToken ?? '', {
         secret: config.REFRESH_TOKEN_SECRET,
       });
       const legalUser = await this.usersService.findOne(parseInt(belongsTo));
@@ -231,9 +231,9 @@ export class AuthService {
     }
   }
 
-  private async getCredentials(
-    userId: string,
-    roles: [Role],
+  async getCredentials(
+    userId: number,
+    roles: Role[],
   ): Promise<{
     access_token: string;
     refresh_token: string;
@@ -248,7 +248,7 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
-  private generateAccessToken(userId: string, roles: [Role]) {
+  private generateAccessToken(userId: number, roles: Role[]) {
     return this.jwtService.sign(
       { userId, roles },
       {
@@ -258,7 +258,7 @@ export class AuthService {
     );
   }
 
-  private generateRefreshToken(userId: string) {
+  private generateRefreshToken(userId: number) {
     return this.jwtService.sign(
       { userId },
       {
