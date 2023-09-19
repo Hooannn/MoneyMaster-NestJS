@@ -1,5 +1,6 @@
 import {
   HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -27,9 +28,9 @@ export interface JwtPayloads {
 export class AuthService {
   constructor(
     @Inject('REDIS') private readonly redisClient: Redis,
-    private usersService: UsersService,
-    private mailerService: MailerService,
-    private jwtService: JwtService,
+    private readonly usersService: UsersService,
+    private readonly mailerService: MailerService,
+    private readonly jwtService: JwtService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -37,7 +38,10 @@ export class AuthService {
     try {
       const requestUser = await this.usersService.findPassword(signInDto.email);
       if (!requestUser)
-        throw new HttpException('Unregistered email address', 400);
+        throw new HttpException(
+          'Unregistered email address',
+          HttpStatus.BAD_REQUEST,
+        );
       const isPasswordMatched = compareSync(
         signInDto.password?.toString(),
         requestUser.password?.toString(),
@@ -56,19 +60,22 @@ export class AuthService {
         credentials: { access_token, refresh_token },
       };
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async signInWithRenewPassword(signInDto: SignInDto) {
     try {
       const user = await this.usersService.findOneByEmail(signInDto.email);
-      if (!user) throw new HttpException('Unregistered email address', 400);
+      if (!user)
+        throw new HttpException(
+          'Unregistered email address',
+          HttpStatus.BAD_REQUEST,
+        );
       const generatedPassword = await this.redisClient.get(
         `email:${signInDto.email}`,
       );
-      const isPasswordMatched =
-        parseInt(generatedPassword) === signInDto.password;
+      const isPasswordMatched = generatedPassword === signInDto.password;
 
       if (!isPasswordMatched)
         throw new UnauthorizedException('Invalid password');
@@ -89,7 +96,7 @@ export class AuthService {
 
       return { user, credentials: { access_token, refresh_token } };
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -105,19 +112,22 @@ export class AuthService {
         ),
       ]);
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async signUp(signUpDto: SignUpDto) {
     try {
       const user = await this.usersService.findOneByEmail(signUpDto.email);
-      if (user) throw new HttpException('Registered email address', 400);
+      if (user)
+        throw new HttpException(
+          'Registered email address',
+          HttpStatus.BAD_REQUEST,
+        );
       const generatedPassword = await this.redisClient.get(
         `email:${signUpDto.email}`,
       );
-      const isPasswordMatched =
-        parseInt(generatedPassword) === signUpDto.password;
+      const isPasswordMatched = generatedPassword === signUpDto.password;
 
       if (!isPasswordMatched)
         throw new UnauthorizedException(`Invalid password`);
@@ -144,7 +154,7 @@ export class AuthService {
         credentials: { access_token, refresh_token },
       };
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -169,7 +179,7 @@ export class AuthService {
       );
       return { credentials: { access_token, refresh_token } };
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -272,7 +282,7 @@ export class AuthService {
     return this.mailerService.sendMail(mailOptions);
   }
 
-  private async sendGeneratedPasswordMail(email: string, password: number) {
+  private async sendGeneratedPasswordMail(email: string, password: string) {
     const mailOptions: ISendMailOptions = {
       to: email,
       subject: 'Register account - Money Master',

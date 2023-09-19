@@ -1,26 +1,67 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateCategoryGroupDto } from './dto/create-category_group.dto';
 import { UpdateCategoryGroupDto } from './dto/update-category_group.dto';
+import { Knex } from 'knex';
+import { InjectKnex } from 'nestjs-knex';
+import { CategoryGroup } from './entities/category_group.entity';
 
 @Injectable()
 export class CategoryGroupsService {
-  create(createCategoryGroupDto: CreateCategoryGroupDto) {
-    return 'This action adds a new categoryGroup';
+  constructor(@InjectKnex() private readonly knex: Knex) {}
+
+  async create(createCategoryGroupDto: CreateCategoryGroupDto) {
+    try {
+      const res = await this.knex<CategoryGroup>('category_groups')
+        .insert(createCategoryGroupDto, '*')
+        .first();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  findAll() {
-    return `This action returns all categoryGroups`;
+  async findAll() {
+    try {
+      const res = await this.knex<CategoryGroup>('category_groups').select();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} categoryGroup`;
+  async findOne(id: number) {
+    try {
+      const res = await this.knex<CategoryGroup>('category_groups')
+        .where('id', id)
+        .first();
+
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  update(id: number, updateCategoryGroupDto: UpdateCategoryGroupDto) {
-    return `This action updates a #${id} categoryGroup`;
+  async update(id: number, updateCategoryGroupDto: UpdateCategoryGroupDto) {
+    try {
+      const res = await this.knex<CategoryGroup>('category_groups')
+        .where('id', id)
+        .update(updateCategoryGroupDto, '*')
+        .first();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} categoryGroup`;
+  async remove(id: number) {
+    try {
+      const res = await this.knex<CategoryGroup>('category_groups')
+        .where('id', id)
+        .del('*')
+        .first();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 }

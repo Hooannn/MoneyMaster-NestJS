@@ -1,34 +1,87 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CategoryGroupsService } from './category_groups.service';
 import { CreateCategoryGroupDto } from './dto/create-category_group.dto';
 import { UpdateCategoryGroupDto } from './dto/update-category_group.dto';
+import ResponseBuilder from 'src/utils/response';
+import { Role, Roles } from 'src/auth/auth.roles';
+import { CategoryGroup } from './entities/category_group.entity';
 
 @Controller('category-groups')
 export class CategoryGroupsController {
   constructor(private readonly categoryGroupsService: CategoryGroupsService) {}
+  private readonly responseBuilder = new ResponseBuilder<
+    CategoryGroup | CategoryGroup[]
+  >();
 
   @Post()
-  create(@Body() createCategoryGroupDto: CreateCategoryGroupDto) {
-    return this.categoryGroupsService.create(createCategoryGroupDto);
+  @Roles(Role.Admin)
+  async create(@Body() createCategoryGroupDto: CreateCategoryGroupDto) {
+    const res = await this.categoryGroupsService.create(createCategoryGroupDto);
+    return this.responseBuilder
+      .code(201)
+      .data(res)
+      .success(true)
+      .message('Created')
+      .build();
   }
 
   @Get()
-  findAll() {
-    return this.categoryGroupsService.findAll();
+  async findAll() {
+    const res = await this.categoryGroupsService.findAll();
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('ok')
+      .build();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.categoryGroupsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const res = await this.categoryGroupsService.findOne(+id);
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('ok')
+      .build();
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCategoryGroupDto: UpdateCategoryGroupDto) {
-    return this.categoryGroupsService.update(+id, updateCategoryGroupDto);
+  @Roles(Role.Admin)
+  async update(
+    @Param('id') id: string,
+    @Body() updateCategoryGroupDto: UpdateCategoryGroupDto,
+  ) {
+    const res = await this.categoryGroupsService.update(
+      +id,
+      updateCategoryGroupDto,
+    );
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('Updated')
+      .build();
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.categoryGroupsService.remove(+id);
+  @Roles(Role.Admin)
+  async remove(@Param('id') id: string) {
+    const res = await this.categoryGroupsService.remove(+id);
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('Deleted')
+      .build();
   }
 }

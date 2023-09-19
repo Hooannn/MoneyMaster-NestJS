@@ -1,13 +1,26 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectKnex, Knex } from 'nestjs-knex';
 import { Role } from 'src/auth/auth.roles';
 import { User } from './entities/user.entity';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { compareSync, hashSync } from 'bcrypt';
+import config from 'src/configs';
+import Redis from 'ioredis';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectKnex() private readonly knex: Knex) {}
+  constructor(
+    @InjectKnex() private readonly knex: Knex,
+    @Inject('REDIS') private readonly redisClient: Redis,
+  ) {}
   private SELECTED_COLUMNS: [
     'id',
     'first_name',
@@ -30,97 +43,144 @@ export class UsersService {
 
   async checkUser(params: { email: string }) {
     try {
-      const user = await this.knex<User>('users')
+      const res = await this.knex<User>('users')
         .select('first_name', 'last_name', 'id', 'email')
         .where('email', params.email)
         .first();
-      return user;
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async create(createUserDto: CreateUserDto) {
     try {
       const defaultRoles: Role[] = [Role.User];
-      const [user] = await this.knex<User>('users').insert(
-        { ...createUserDto, roles: defaultRoles },
-        this.SELECTED_COLUMNS,
-      );
-      return user;
+      const res = await this.knex<User>('users')
+        .insert(
+          { ...createUserDto, roles: defaultRoles },
+          this.SELECTED_COLUMNS,
+        )
+        .first();
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async findAll() {
     try {
-      const users = await this.knex<User>('users')
+      const res = await this.knex<User>('users')
         .column(this.SELECTED_COLUMNS)
         .select();
-      return users;
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async findOne(id: number) {
     try {
-      const user = await this.knex<User>('users')
+      const res = await this.knex<User>('users')
         .column(this.SELECTED_COLUMNS)
         .select()
         .where('id', id)
         .first();
-      return user;
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async findOneByEmail(email: string) {
     try {
-      const user = await this.knex<User>('users')
+      const res = await this.knex<User>('users')
         .column(this.SELECTED_COLUMNS)
         .select()
         .where({ email })
         .first();
-      return user;
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async findPassword(email: string) {
     try {
-      const user = await this.knex<User>('users')
+      const res = await this.knex<User>('users')
         .select('id', 'password')
         .where({ email })
         .first();
-      return user;
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async update(id: number, updateUserDto: Partial<UpdateUserDto>) {
+  async findPasswordById(id: number) {
     try {
-      const [updatedRecord] = await this.knex<User>('users')
-        .where('id', id)
-        .update(updateUserDto, this.SELECTED_COLUMNS);
-      return updatedRecord;
+      const res = await this.knex<User>('users')
+        .select('id', 'password')
+        .where({ id })
+        .first();
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async changePassword(id: number, changePasswordDto: ChangePasswordDto) {
+    try {
+      const user = await this.findPasswordById(id);
+      if (!user)
+        throw new HttpException('No such user', HttpStatus.BAD_REQUEST);
+      const isCurrentPasswordValid = compareSync(
+        changePasswordDto.current_password,
+        user.password,
+      );
+      if (!isCurrentPasswordValid)
+        throw new ForbiddenException('Invalid password');
+
+      const newPassword = hashSync(
+        changePasswordDto.new_password,
+        parseInt(config.SALTED_PASSWORD),
+      );
+
+      const res = await this.knex<User>('users').where('id', id).update(
+        {
+          password: newPassword,
+        },
+        this.SELECTED_COLUMNS,
+      );
+
+      await this.redisClient.del(`refresh_token:${id}`);
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    try {
+      const res = await this.knex<User>('users')
+        .where('id', id)
+        .update(updateUserDto, this.SELECTED_COLUMNS)
+        .first();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
   async remove(id: number) {
     try {
-      const [deletedRecord] = await this.knex<User>('users')
+      const res = await this.knex<User>('users')
         .where('id', id)
-        .delete(this.SELECTED_COLUMNS);
-      return deletedRecord;
+        .delete(this.SELECTED_COLUMNS)
+        .first();
+      return res;
     } catch (error) {
-      throw new HttpException(error, 400);
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 }
