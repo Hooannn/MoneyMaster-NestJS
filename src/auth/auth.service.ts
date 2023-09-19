@@ -90,9 +90,13 @@ export class AuthService {
         user.roles,
       );
 
-      this.usersService.update(user.id, {
-        password: newHashedPassword,
-      });
+      this.usersService.update(
+        user.id,
+        {
+          password: newHashedPassword,
+        },
+        user.id,
+      );
 
       return { user, credentials: { access_token, refresh_token } };
     } catch (error) {
@@ -144,13 +148,21 @@ export class AuthService {
         last_name: '',
       });
 
+      const updatedUser = await this.usersService.update(
+        createdUser.id,
+        {
+          created_by: createdUser.id,
+        },
+        createdUser.id,
+      );
+
       const { access_token, refresh_token } = await this.getCredentials(
         createdUser.id,
         createdUser.roles,
       );
 
       return {
-        user: createdUser,
+        user: updatedUser,
         credentials: { access_token, refresh_token },
       };
     } catch (error) {
@@ -213,13 +225,21 @@ export class AuthService {
         avatar: picture,
       });
 
+      const updatedUser = await this.usersService.update(
+        createdUser.id,
+        {
+          created_by: createdUser.id,
+        },
+        createdUser.id,
+      );
+
       const { access_token, refresh_token } = await this.getCredentials(
         createdUser.id,
         createdUser.roles,
       );
 
       return {
-        user: createdUser,
+        user: updatedUser,
         credentials: { access_token, refresh_token },
       };
     }

@@ -82,5 +82,6 @@ export class AppModule implements OnModuleInit {
     await bootstrapDatabase(this.knex, this.logger);
     // Dangerous
     // dropDatabase(this.knex, this.logger);
+    this.logger.info('End bootstrapping database');
   }
 }

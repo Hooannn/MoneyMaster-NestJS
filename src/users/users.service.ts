@@ -14,12 +14,14 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { compareSync, hashSync } from 'bcrypt';
 import config from 'src/configs';
 import Redis from 'ioredis';
+import { WalletsService } from 'src/wallets/wallets.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectKnex() private readonly knex: Knex,
     @Inject('REDIS') private readonly redisClient: Redis,
+    private readonly walletsService: WalletsService,
   ) {}
   private SELECTED_COLUMNS: [
     'id',
@@ -53,15 +55,32 @@ export class UsersService {
     }
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, createdBy?: number) {
     try {
       const defaultRoles: Role[] = [Role.User];
       const res = await this.knex<User>('users')
         .insert(
-          { ...createUserDto, roles: defaultRoles },
+          {
+            ...createUserDto,
+            roles: defaultRoles,
+            created_by: createdBy,
+            updated_by: createdBy,
+          },
           this.SELECTED_COLUMNS,
         )
         .first();
+
+      await this.walletsService.create(
+        {
+          name: 'Default wallet',
+          description: "This is a default user's wallet",
+          amount_in_usd: 0,
+          wallet_policy_id: 1, // Need to create the default wallet policy
+          wallet_type_id: 1, // Need to create the default wallet type
+          belongs_to: res.id,
+        },
+        res.id,
+      );
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -149,6 +168,7 @@ export class UsersService {
       const res = await this.knex<User>('users').where('id', id).update(
         {
           password: newPassword,
+          updated_by: id,
         },
         this.SELECTED_COLUMNS,
       );
@@ -160,11 +180,14 @@ export class UsersService {
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto, updatedBy?: number) {
     try {
       const res = await this.knex<User>('users')
         .where('id', id)
-        .update(updateUserDto, this.SELECTED_COLUMNS)
+        .update(
+          { ...updateUserDto, updated_by: updatedBy },
+          this.SELECTED_COLUMNS,
+        )
         .first();
       return res;
     } catch (error) {

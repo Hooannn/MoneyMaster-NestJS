@@ -19,16 +19,21 @@ export class CreateWalletDto {
   readonly custom_image?: string;
 
   @IsString()
-  readonly currency_code: string;
+  @IsOptional()
+  readonly currency_code?: string;
 
   @IsBoolean()
-  readonly is_active: boolean;
+  @IsOptional()
+  readonly is_active?: boolean;
 
   @IsNumber()
   readonly amount_in_usd: number;
 
   @IsInt()
   readonly wallet_type_id: number;
+
+  @IsInt()
+  readonly belongs_to: number;
 
   @IsInt()
   readonly wallet_policy_id: number;

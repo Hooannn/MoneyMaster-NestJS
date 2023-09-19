@@ -9,6 +9,7 @@ import {
   Request,
   HttpException,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,12 +27,15 @@ export class UsersController {
 
   @Post()
   @Roles(Role.Admin)
-  async create(@Body() createUserDto: CreateUserDto) {
+  async create(@Req() req, @Body() createUserDto: CreateUserDto) {
     createUserDto.password = hashSync(
       createUserDto.password,
       parseInt(config.SALTED_PASSWORD),
     );
-    const user = await this.usersService.create(createUserDto);
+    const user = await this.usersService.create(
+      createUserDto,
+      req.auth?.userId,
+    );
     return this.responseBuilder
       .code(201)
       .success(true)
@@ -74,7 +78,7 @@ export class UsersController {
     delete updateUserDto.email;
     delete updateUserDto.roles;
     delete updateUserDto.password;
-    const user = await this.usersService.update(userId, updateUserDto);
+    const user = await this.usersService.update(userId, updateUserDto, userId);
     return this.responseBuilder
       .code(200)
       .success(true)
@@ -117,14 +121,22 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(Role.Admin)
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     if (updateUserDto.password) {
       updateUserDto.password = hashSync(
         updateUserDto.password,
         parseInt(config.SALTED_PASSWORD),
       );
     }
-    const updatedRecord = await this.usersService.update(+id, updateUserDto);
+    const updatedRecord = await this.usersService.update(
+      +id,
+      updateUserDto,
+      req.auth?.userId,
+    );
     return this.responseBuilder
       .code(200)
       .success(true)

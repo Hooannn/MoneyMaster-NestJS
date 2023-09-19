@@ -13,7 +13,7 @@ const makeDefaultColumns = (table: Knex.CreateTableBuilder) => {
 };
 
 const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
-  logger.info('Start bootstrapping tables');
+  logger.info('Start bootstrapping database');
   let tablesToCreate = [
     // Users table
     {
@@ -60,12 +60,14 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
             .notNullable()
             .defaultTo('USD')
             .comment('Follow ISO 4217 currency code');
-          table.boolean('is_active').notNullable().defaultTo(true);
+          table.boolean('is_active').nullable().defaultTo(true);
           table.timestamps(true, true);
           table
             .double('amount_in_usd')
             .notNullable()
             .comment('Use USD at default');
+          table.integer('belongs_to').unsigned().notNullable();
+          table.foreign('belongs_to').references('users.id');
           table.integer('wallet_type_id').unsigned().notNullable();
           table.foreign('wallet_type_id').references('wallet_types.id');
           table.integer('wallet_policy_id').unsigned().notNullable();
