@@ -48,13 +48,13 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: config.ACCESS_TOKEN_SECRET,
       });
-      if (requiredRoles?.length) {
-        return requiredRoles.some((role) => payload.roles?.includes(role));
-      }
       this.logger.logger.setBindings({
         auth: payload,
       });
       request['auth'] = payload;
+      if (requiredRoles?.length) {
+        return requiredRoles.some((role) => payload.roles?.includes(role));
+      }
     } catch {
       throw new UnauthorizedException('Invalid access token');
     }

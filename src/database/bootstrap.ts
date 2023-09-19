@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import { PinoLogger } from 'nestjs-pino';
 const makeContentColumns = (table: Knex.CreateTableBuilder) => {
-  table.string('name', 255).notNullable();
+  table.string('name', 255).unique().notNullable();
   table.string('description', 255).nullable();
 };
 
@@ -23,7 +23,7 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
           table.increments('id');
           table.string('first_name', 255).notNullable();
           table.string('last_name', 255).notNullable();
-          table.string('email', 255).notNullable().unique();
+          table.string('email', 255).unique().notNullable().unique();
           table.specificType('roles', 'text[]').notNullable();
           table.string('password', 255).notNullable();
           table.string('avatar', 255).nullable();

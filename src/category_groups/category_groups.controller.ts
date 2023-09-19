@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { CategoryGroupsService } from './category_groups.service';
 import { CreateCategoryGroupDto } from './dto/create-category_group.dto';
@@ -23,8 +24,14 @@ export class CategoryGroupsController {
 
   @Post()
   @Roles(Role.Admin)
-  async create(@Body() createCategoryGroupDto: CreateCategoryGroupDto) {
-    const res = await this.categoryGroupsService.create(createCategoryGroupDto);
+  async create(
+    @Req() req,
+    @Body() createCategoryGroupDto: CreateCategoryGroupDto,
+  ) {
+    const res = await this.categoryGroupsService.create(
+      createCategoryGroupDto,
+      req.auth?.userId,
+    );
     return this.responseBuilder
       .code(201)
       .data(res)
@@ -58,12 +65,14 @@ export class CategoryGroupsController {
   @Patch(':id')
   @Roles(Role.Admin)
   async update(
+    @Req() req,
     @Param('id') id: string,
     @Body() updateCategoryGroupDto: UpdateCategoryGroupDto,
   ) {
     const res = await this.categoryGroupsService.update(
       +id,
       updateCategoryGroupDto,
+      req.auth?.userId,
     );
     return this.responseBuilder
       .code(200)

@@ -1,26 +1,78 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateWalletPolicyDto } from './dto/create-wallet_policy.dto';
 import { UpdateWalletPolicyDto } from './dto/update-wallet_policy.dto';
+import { InjectKnex } from 'nestjs-knex';
+import { Knex } from 'knex';
+import { WalletPolicy } from './entities/wallet_policy.entity';
 
 @Injectable()
 export class WalletPoliciesService {
-  create(createWalletPolicyDto: CreateWalletPolicyDto) {
-    return 'This action adds a new walletPolicy';
+  constructor(@InjectKnex() private readonly knex: Knex) {}
+
+  async create(
+    createWalletPolicyDto: CreateWalletPolicyDto,
+    createdBy: number,
+  ) {
+    try {
+      const [res] = await this.knex<WalletPolicy>('wallet_policies').insert(
+        {
+          ...createWalletPolicyDto,
+          updated_by: createdBy,
+          created_by: createdBy,
+        },
+        '*',
+      );
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  findAll() {
-    return `This action returns all walletPolicies`;
+  async findAll() {
+    try {
+      const res = await this.knex<WalletPolicy>('wallet_policies').select();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} walletPolicy`;
+  async findOne(id: number) {
+    try {
+      const res = await this.knex<WalletPolicy>('wallet_policies')
+        .where('id', id)
+        .first();
+
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  update(id: number, updateWalletPolicyDto: UpdateWalletPolicyDto) {
-    return `This action updates a #${id} walletPolicy`;
+  async update(
+    id: number,
+    updateWalletPolicyDto: UpdateWalletPolicyDto,
+    updatedBy: number,
+  ) {
+    try {
+      const [res] = await this.knex<WalletPolicy>('wallet_policies')
+        .where('id', id)
+        .update({ ...updateWalletPolicyDto, updated_by: updatedBy }, '*');
+
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} walletPolicy`;
+  async remove(id: number) {
+    try {
+      const [res] = await this.knex<WalletPolicy>('wallet_policies')
+        .where('id', id)
+        .del('*');
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
   }
 }

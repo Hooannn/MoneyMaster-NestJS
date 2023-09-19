@@ -1,34 +1,93 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+} from '@nestjs/common';
+import { Transaction } from './entities/transaction.entity';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import ResponseBuilder from 'src/utils/response';
+import { Role, Roles } from 'src/auth/auth.roles';
 
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
+  private readonly responseBuilder = new ResponseBuilder<
+    Transaction | Transaction[]
+  >();
 
   @Post()
-  create(@Body() createTransactionDto: CreateTransactionDto) {
-    return this.transactionsService.create(createTransactionDto);
+  @Roles(Role.Admin)
+  async create(@Req() req, @Body() createDto: CreateTransactionDto) {
+    const res = await this.transactionsService.create(
+      createDto,
+      req.auth?.userId,
+    );
+    return this.responseBuilder
+      .code(201)
+      .data(res)
+      .success(true)
+      .message('Created')
+      .build();
   }
 
   @Get()
-  findAll() {
-    return this.transactionsService.findAll();
+  async findAll() {
+    const res = await this.transactionsService.findAll();
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('ok')
+      .build();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const res = await this.transactionsService.findOne(+id);
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('ok')
+      .build();
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-    return this.transactionsService.update(+id, updateTransactionDto);
+  @Roles(Role.Admin)
+  async update(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() updateDto: UpdateTransactionDto,
+  ) {
+    const res = await this.transactionsService.update(
+      +id,
+      updateDto,
+      req.auth?.userId,
+    );
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('Updated')
+      .build();
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionsService.remove(+id);
+  @Roles(Role.Admin)
+  async remove(@Param('id') id: string) {
+    const res = await this.transactionsService.remove(+id);
+    return this.responseBuilder
+      .code(200)
+      .data(res)
+      .success(true)
+      .message('Deleted')
+      .build();
   }
 }
