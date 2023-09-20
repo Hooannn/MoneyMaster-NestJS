@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import { PinoLogger } from 'nestjs-pino';
 const makeContentColumns = (table: Knex.CreateTableBuilder) => {
-  table.string('name', 255).unique().notNullable();
+  table.string('name', 255).notNullable();
   table.string('description', 255).nullable();
 };
 
@@ -76,6 +76,22 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
         });
       },
     },
+    // Files table, using cloudinary
+    {
+      key: 'files',
+      make: async () => {
+        return await knex.schema.createTable('files', (table) => {
+          table.increments('id');
+          table.timestamps(true, true);
+          table.string('url', 255).notNullable();
+          table.string('format', 255).notNullable();
+          table.string('resource_type', 255).notNullable();
+          table.jsonb('provider_metadata').nullable();
+          makeContentColumns(table);
+          makeDefaultColumns(table);
+        });
+      },
+    },
     // Transactions table
     {
       key: 'transactions',
@@ -88,12 +104,27 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
           table.foreign('wallet_id').references('wallets.id');
           table.integer('category_id').unsigned().notNullable();
           table.foreign('category_id').references('categories.id');
+          table.boolean('reportable').nullable().defaultTo(true);
           table
             .double('amount_in_usd')
             .notNullable()
             .comment('Use USD at default');
           table.timestamp('transacted_at').defaultTo(knex.fn.now());
           makeDefaultColumns(table);
+        });
+      },
+    },
+    // Transaction and files pivot table
+    {
+      key: 'transaction_files',
+      make: async () => {
+        return await knex.schema.createTable('transaction_files', (table) => {
+          table.increments('id');
+          table.timestamps(true, true);
+          table.integer('transaction_id').unsigned().notNullable();
+          table.foreign('transaction_id').references('transactions.id');
+          table.integer('file_id').unsigned().notNullable();
+          table.foreign('file_id').references('files.id');
         });
       },
     },

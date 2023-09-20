@@ -7,22 +7,26 @@ const dropDatabase = async (knex: Knex, logger: PinoLogger) => {
     logger.error(`Droped table ${key} error: ${JSON.stringify(error)}`);
 
   const tablesToDrop = [
-    'notifications',
-    'category_groups',
-    'categories',
     'transactions',
     'wallet_types',
     'wallet_policies',
-    'wallets',
     'users',
+    'wallets',
+    'notifications',
+    'category_groups',
+    'categories',
+    'files',
+    'transaction_files',
   ];
 
-  tablesToDrop.forEach((key) => {
-    knex.schema
-      .dropTableIfExists(key)
-      .then(() => traceSuccess(key))
-      .catch((err) => traceError(key, err));
-  });
+  return Promise.all([
+    tablesToDrop.map((key) =>
+      knex.schema
+        .dropTableIfExists(key)
+        .then(() => traceSuccess(key))
+        .catch((err) => traceError(key, err)),
+    ),
+  ]);
 };
 
 export default dropDatabase;

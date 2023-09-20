@@ -1,20 +1,31 @@
-import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateTransactionDto {
   @IsString()
   @IsOptional()
-  readonly description?: string;
+  description?: string;
 
   @IsInt()
-  readonly wallet_id: number;
+  wallet_id: number;
 
   @IsInt()
-  readonly category_id: number;
+  category_id: number;
 
   @IsNumber()
-  readonly amount_in_usd: number;
+  amount_in_usd: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  file_ids?: number[];
 
   @IsString()
   @IsOptional()
-  readonly transacted_at: string;
+  transacted_at: string;
 }

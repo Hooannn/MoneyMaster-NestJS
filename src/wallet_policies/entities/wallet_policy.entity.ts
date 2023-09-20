@@ -1,4 +1,4 @@
-import { DefaultEntity } from 'src/shared/entity';
+import { DefaultEntity } from '../../../src/shared/entity';
 
 export class WalletPolicy extends DefaultEntity {
   readonly description?: string;

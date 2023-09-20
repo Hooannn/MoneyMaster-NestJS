@@ -14,14 +14,15 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { compareSync, hashSync } from 'bcrypt';
 import config from 'src/configs';
 import Redis from 'ioredis';
-import { WalletsService } from 'src/wallets/wallets.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectKnex() private readonly knex: Knex,
     @Inject('REDIS') private readonly redisClient: Redis,
-    private readonly walletsService: WalletsService,
+    @InjectQueue('users') private usersQueue: Queue,
   ) {}
   private SELECTED_COLUMNS: [
     'id',
@@ -58,29 +59,20 @@ export class UsersService {
   async create(createUserDto: CreateUserDto, createdBy?: number) {
     try {
       const defaultRoles: Role[] = [Role.User];
-      const res = await this.knex<User>('users')
-        .insert(
-          {
-            ...createUserDto,
-            roles: defaultRoles,
-            created_by: createdBy,
-            updated_by: createdBy,
-          },
-          this.SELECTED_COLUMNS,
-        )
-        .first();
-
-      await this.walletsService.create(
+      const [res] = await this.knex<User>('users').insert(
         {
-          name: 'Default wallet',
-          description: "This is a default user's wallet",
-          amount_in_usd: 0,
-          wallet_policy_id: 1, // Need to create the default wallet policy
-          wallet_type_id: 1, // Need to create the default wallet type
-          belongs_to: res.id,
+          ...createUserDto,
+          roles: defaultRoles,
+          created_by: createdBy,
+          updated_by: createdBy,
         },
-        res.id,
+        this.SELECTED_COLUMNS,
       );
+
+      this.usersQueue.add('user.created', {
+        object: res,
+      });
+
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -182,13 +174,15 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto, updatedBy?: number) {
     try {
-      const res = await this.knex<User>('users')
+      const [res] = await this.knex<User>('users')
         .where('id', id)
         .update(
           { ...updateUserDto, updated_by: updatedBy },
           this.SELECTED_COLUMNS,
-        )
-        .first();
+        );
+      this.usersQueue.add('user.updated', {
+        object: res,
+      });
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -197,10 +191,9 @@ export class UsersService {
 
   async remove(id: number) {
     try {
-      const res = await this.knex<User>('users')
+      const [res] = await this.knex<User>('users')
         .where('id', id)
-        .delete(this.SELECTED_COLUMNS)
-        .first();
+        .delete(this.SELECTED_COLUMNS);
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);

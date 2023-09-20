@@ -44,6 +44,18 @@ export class WalletsService {
     }
   }
 
+  async findOneUserWallet(userId: number) {
+    try {
+      const res = await this.knex<Wallet>('wallets')
+        .where('belongs_to', userId)
+        .first();
+
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async update(
     id: number,
     updateWalletDto: UpdateWalletDto,

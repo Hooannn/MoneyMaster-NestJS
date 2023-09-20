@@ -21,6 +21,6 @@ export class AppService {
     ) {
       throw new ForbiddenException();
     }
-    return await this.authService.getCredentials(-999, [Role.Admin, Role.User]);
+    return await this.authService.getCredentials(1, [Role.Admin, Role.User]);
   }
 }
