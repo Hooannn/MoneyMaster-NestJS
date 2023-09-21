@@ -19,14 +19,14 @@ const dropDatabase = async (knex: Knex, logger: PinoLogger) => {
     'transaction_files',
   ];
 
-  return Promise.all([
+  return await Promise.all(
     tablesToDrop.map((key) =>
       knex.schema
         .dropTableIfExists(key)
         .then(() => traceSuccess(key))
         .catch((err) => traceError(key, err)),
     ),
-  ]);
+  );
 };
 
 export default dropDatabase;

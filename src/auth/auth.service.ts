@@ -18,7 +18,6 @@ import { registerTemplate } from 'src/mailer/templates/password';
 import { RefreshDto } from './dto/refresh-dto';
 import { HttpService } from '@nestjs/axios';
 import { Role } from './auth.roles';
-
 export interface JwtPayloads {
   userId: string;
   roles: [Role];
@@ -107,14 +106,12 @@ export class AuthService {
   async createPassword(params: { email: string }) {
     try {
       const generatedPassword = generatePassword();
-      return Promise.all([
-        this.sendGeneratedPasswordMail(params.email, generatedPassword),
-        this.redisClient.setex(
-          `email:${params.email}`,
-          parseInt(config.PASSWORD_LIFE),
-          generatedPassword,
-        ),
-      ]);
+      this.sendGeneratedPasswordMail(params.email, generatedPassword);
+      this.redisClient.setex(
+        `email:${params.email}`,
+        parseInt(config.PASSWORD_LIFE),
+        generatedPassword,
+      );
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }

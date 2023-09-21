@@ -14,15 +14,14 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { compareSync, hashSync } from 'bcrypt';
 import config from 'src/configs';
 import Redis from 'ioredis';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { WalletsService } from 'src/wallets/wallets.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectKnex() private readonly knex: Knex,
     @Inject('REDIS') private readonly redisClient: Redis,
-    @InjectQueue('users') private usersQueue: Queue,
+    private readonly walletsService: WalletsService,
   ) {}
   private SELECTED_COLUMNS: [
     'id',
@@ -69,9 +68,7 @@ export class UsersService {
         this.SELECTED_COLUMNS,
       );
 
-      this.usersQueue.add('user.created', {
-        object: res,
-      });
+      await this.walletsService.createDefaultWallet(res.id);
 
       return res;
     } catch (error) {
@@ -180,9 +177,13 @@ export class UsersService {
           { ...updateUserDto, updated_by: updatedBy },
           this.SELECTED_COLUMNS,
         );
-      this.usersQueue.add('user.updated', {
-        object: res,
-      });
+      const userId = res.id;
+      const haveAnyWallets = await this.walletsService.findOneUserWallet(
+        userId,
+      );
+      if (!haveAnyWallets) {
+        await this.walletsService.createDefaultWallet(userId);
+      }
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);

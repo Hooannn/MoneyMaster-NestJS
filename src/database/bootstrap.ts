@@ -122,7 +122,10 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
           table.increments('id');
           table.timestamps(true, true);
           table.integer('transaction_id').unsigned().notNullable();
-          table.foreign('transaction_id').references('transactions.id');
+          table
+            .foreign('transaction_id')
+            .references('transactions.id')
+            .onDelete('CASCADE');
           table.integer('file_id').unsigned().notNullable();
           table.foreign('file_id').references('files.id');
         });

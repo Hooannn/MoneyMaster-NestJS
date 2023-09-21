@@ -22,8 +22,19 @@ export class TransactionsController {
     Transaction | Transaction[]
   >();
 
-  @Post()
+  @Delete()
   @Roles(Role.Admin)
+  async clear() {
+    await this.transactionsService.clear();
+    return this.responseBuilder
+      .code(200)
+      .data(null)
+      .success(true)
+      .message('Done')
+      .build();
+  }
+
+  @Post()
   async create(@Req() req, @Body() createDto: CreateTransactionDto) {
     const res = await this.transactionsService.create(
       createDto,
@@ -38,6 +49,7 @@ export class TransactionsController {
   }
 
   @Get()
+  @Roles(Role.Admin)
   async findAll() {
     const res = await this.transactionsService.findAll();
     return this.responseBuilder
@@ -60,7 +72,6 @@ export class TransactionsController {
   }
 
   @Patch(':id')
-  @Roles(Role.Admin)
   async update(
     @Req() req,
     @Param('id') id: string,
@@ -80,7 +91,6 @@ export class TransactionsController {
   }
 
   @Delete(':id')
-  @Roles(Role.Admin)
   async remove(@Param('id') id: string) {
     const res = await this.transactionsService.remove(+id);
     return this.responseBuilder

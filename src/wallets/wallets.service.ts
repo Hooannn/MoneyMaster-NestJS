@@ -80,4 +80,30 @@ export class WalletsService {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
+
+  async deposit(walletId: number, amount: number) {
+    return await this.knex<Wallet>('wallets')
+      .where('id', walletId)
+      .increment('amount_in_usd', amount);
+  }
+
+  async withdraw(walletId: number, amount: number) {
+    return await this.knex<Wallet>('wallets')
+      .where('id', walletId)
+      .decrement('amount_in_usd', amount);
+  }
+
+  async createDefaultWallet(userId: number) {
+    return await this.create(
+      {
+        name: 'Default wallet',
+        description: "This is a default user's wallet",
+        amount_in_usd: 0,
+        wallet_policy_id: 1,
+        wallet_type_id: 1,
+        belongs_to: userId,
+      },
+      userId,
+    );
+  }
 }
