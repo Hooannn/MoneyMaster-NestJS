@@ -10,19 +10,20 @@ import {
   HttpException,
   HttpStatus,
   Req,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import ResponseBuilder from 'src/utils/response';
 import { User } from './entities/user.entity';
 import { Role, Roles } from 'src/auth/auth.roles';
 import { hashSync } from 'bcrypt';
 import config from 'src/configs';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import Response from 'src/response.entity';
+import { QueryDto } from 'src/query.dto';
 @Controller('users')
 export class UsersController {
-  private readonly responseBuilder = new ResponseBuilder<User | User[]>();
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
@@ -36,24 +37,27 @@ export class UsersController {
       createUserDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(201)
-      .success(true)
-      .data(user)
-      .message('Created')
-      .build();
+
+    return new Response<User>({
+      code: 201,
+      success: true,
+      message: 'Created',
+      data: user,
+    });
   }
 
   @Get()
   @Roles(Role.Admin)
-  async findAll() {
-    const users = await this.usersService.findAll();
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .message('ok')
-      .data(users)
-      .build();
+  async findAll(@Query() query: QueryDto) {
+    const { data, total } = await this.usersService.findAll(query);
+
+    return new Response<User[]>({
+      code: 200,
+      success: true,
+      total: parseInt(total as string),
+      took: data.length,
+      data,
+    });
   }
 
   @Get('/profile')
@@ -62,12 +66,12 @@ export class UsersController {
     const userId = authUser?.userId;
     if (!userId) throw new HttpException('Unknown user', HttpStatus.FORBIDDEN);
     const user = await this.usersService.findOne(userId);
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .message('ok')
-      .data(user)
-      .build();
+
+    return new Response<User>({
+      code: 200,
+      success: true,
+      data: user,
+    });
   }
 
   @Patch('/profile')
@@ -79,12 +83,13 @@ export class UsersController {
     delete updateUserDto.roles;
     delete updateUserDto.password;
     const user = await this.usersService.update(userId, updateUserDto, userId);
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .message('Updated')
-      .data(user)
-      .build();
+
+    return new Response<User>({
+      code: 200,
+      success: true,
+      data: user,
+      message: 'Updated',
+    });
   }
 
   @Patch('/profile/password')
@@ -99,24 +104,25 @@ export class UsersController {
       userId,
       changePasswordDto,
     );
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .message('Updated')
-      .data(user)
-      .build();
+
+    return new Response<User>({
+      code: 200,
+      success: true,
+      data: user,
+      message: 'Updated',
+    });
   }
 
   @Get(':id')
   @Roles(Role.Admin)
   async findOne(@Param('id') id: string) {
     const user = await this.usersService.findOne(+id);
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .message('ok')
-      .data(user)
-      .build();
+
+    return new Response<User>({
+      code: 200,
+      success: true,
+      data: user,
+    });
   }
 
   @Patch(':id')
@@ -137,23 +143,25 @@ export class UsersController {
       updateUserDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .data(updatedRecord)
-      .message('Updated')
-      .build();
+
+    return new Response<User>({
+      code: 200,
+      success: true,
+      data: updatedRecord,
+      message: 'Updated',
+    });
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   async remove(@Param('id') id: string) {
     const record = await this.usersService.remove(+id);
-    return this.responseBuilder
-      .code(200)
-      .success(true)
-      .message('Deleted')
-      .data(record)
-      .build();
+
+    return new Response<User>({
+      code: 200,
+      success: true,
+      data: record,
+      message: 'Deleted',
+    });
   }
 }

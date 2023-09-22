@@ -32,3 +32,8 @@ export class CreateWalletDto {
   @IsInt()
   wallet_type_id: number;
 }
+
+export class AdminCreateWalletDto extends CreateWalletDto {
+  @IsInt()
+  belongs_to: number;
+}

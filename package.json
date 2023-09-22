@@ -32,15 +32,16 @@
     "@nestjs/swagger": "^7.1.11",
     "bcrypt": "^5.0.1",
     "cloudinary": "^1.40.0",
+    "datauri": "4.1.0",
     "knex": "^2.5.1",
     "nestjs-knex": "^2.0.0",
     "nodemailer": "^6.9.5",
     "pino-http": "^8.4.0",
     "reflect-metadata": "^0.1.13",
-    "datauri": "4.1.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.1.0",
     "@nestjs/axios": "^3.0.0",
     "@nestjs/bull": "^10.0.1",
     "@nestjs/cli": "^10.0.0",

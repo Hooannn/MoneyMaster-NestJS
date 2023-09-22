@@ -12,15 +12,12 @@ import { WalletTypesService } from './wallet_types.service';
 import { CreateWalletTypeDto } from './dto/create-wallet_type.dto';
 import { UpdateWalletTypeDto } from './dto/update-wallet_type.dto';
 import { WalletType } from './entities/wallet_type.entity';
-import ResponseBuilder from 'src/utils/response';
 import { Role, Roles } from 'src/auth/auth.roles';
+import Response from 'src/response.entity';
 
 @Controller('wallet-types')
 export class WalletTypesController {
   constructor(private readonly walletTypesService: WalletTypesService) {}
-  private readonly responseBuilder = new ResponseBuilder<
-    WalletType | WalletType[]
-  >();
 
   @Post()
   @Roles(Role.Admin)
@@ -29,34 +26,35 @@ export class WalletTypesController {
       createWalletTypeDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(201)
-      .data(res)
-      .success(true)
-      .message('Created')
-      .build();
+
+    return new Response<WalletType>({
+      code: 201,
+      data: res,
+      success: true,
+      message: 'Created',
+    });
   }
 
   @Get()
   async findAll() {
     const res = await this.walletTypesService.findAll();
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('ok')
-      .build();
+
+    return new Response<WalletType[]>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const res = await this.walletTypesService.findOne(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('ok')
-      .build();
+
+    return new Response<WalletType>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Patch(':id')
@@ -71,23 +69,24 @@ export class WalletTypesController {
       updateWalletTypeDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('Updated')
-      .build();
+
+    return new Response<WalletType>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Updated',
+    });
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   async remove(@Param('id') id: string) {
     const res = await this.walletTypesService.remove(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('Deleted')
-      .build();
+    return new Response<WalletType>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Deleted',
+    });
   }
 }

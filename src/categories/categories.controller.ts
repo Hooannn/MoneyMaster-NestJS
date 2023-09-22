@@ -12,15 +12,12 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
-import ResponseBuilder from 'src/utils/response';
 import { Role, Roles } from 'src/auth/auth.roles';
+import Response from 'src/response.entity';
 
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
-  private readonly responseBuilder = new ResponseBuilder<
-    Category | Category[]
-  >();
 
   @Post()
   @Roles(Role.Admin)
@@ -29,34 +26,33 @@ export class CategoriesController {
       createCategoryDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(201)
-      .data(res)
-      .success(true)
-      .message('Created')
-      .build();
+    return new Response<Category>({
+      code: 201,
+      data: res,
+      success: true,
+      message: 'Created',
+    });
   }
 
   @Get()
   async findAll() {
     const res = await this.categoriesService.findAll();
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('ok')
-      .build();
+
+    return new Response<Category[]>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const res = await this.categoriesService.findOne(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('ok')
-      .build();
+    return new Response<Category>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Patch(':id')
@@ -71,23 +67,25 @@ export class CategoriesController {
       updateCategoryDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('Updated')
-      .build();
+
+    return new Response<Category>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Updated',
+    });
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   async remove(@Param('id') id: string) {
     const res = await this.categoriesService.remove(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('Deleted')
-      .build();
+
+    return new Response<Category>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Deleted',
+    });
   }
 }

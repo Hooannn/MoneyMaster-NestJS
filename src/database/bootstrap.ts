@@ -21,6 +21,7 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
       make: async () => {
         return await knex.schema.createTable('users', (table) => {
           table.increments('id');
+          table.index('email', 'idx_email');
           table.string('first_name', 255).notNullable();
           table.string('last_name', 255).notNullable();
           table.string('email', 255).unique().notNullable().unique();
@@ -38,6 +39,7 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
       make: async () => {
         return await knex.schema.createTable('notifications', (table) => {
           table.increments('id');
+          table.index('user_id', 'idx_user_id');
           table.integer('user_id').unsigned().notNullable();
           table.foreign('user_id').references('users.id');
           table.string('message', 1000).notNullable();
@@ -54,6 +56,7 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
         return await knex.schema.createTable('wallets', (table) => {
           makeContentColumns(table);
           table.increments('id');
+          table.index('belongs_to', 'idx_belongs_to');
           table.string('custom_image', 255).nullable();
           table
             .string('currency_code', 255)
@@ -96,6 +99,8 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
       make: async () => {
         return await knex.schema.createTable('transactions', (table) => {
           table.increments('id');
+          table.index('created_by', 'idx_created_by');
+          table.index('wallet_id', 'idx_wallet_id');
           table.timestamps(true, true);
           table.string('description', 255).nullable();
           table.integer('wallet_id').unsigned().notNullable();
@@ -118,6 +123,7 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
       make: async () => {
         return await knex.schema.createTable('transaction_files', (table) => {
           table.increments('id');
+          table.index('transaction_id', 'idx_transaction_id');
           table.timestamps(true, true);
           table.integer('transaction_id').unsigned().notNullable();
           table
@@ -147,6 +153,7 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
       make: async () => {
         return await knex.schema.createTable('categories', (table) => {
           table.increments('id');
+          table.index('group_id', 'idx_group_id');
           makeContentColumns(table);
           makeDefaultColumns(table);
           table.integer('group_id').unsigned().notNullable();

@@ -11,16 +11,13 @@ import {
 import { CategoryGroupsService } from './category_groups.service';
 import { CreateCategoryGroupDto } from './dto/create-category_group.dto';
 import { UpdateCategoryGroupDto } from './dto/update-category_group.dto';
-import ResponseBuilder from 'src/utils/response';
 import { Role, Roles } from 'src/auth/auth.roles';
 import { CategoryGroup } from './entities/category_group.entity';
+import Response from 'src/response.entity';
 
 @Controller('category-groups')
 export class CategoryGroupsController {
   constructor(private readonly categoryGroupsService: CategoryGroupsService) {}
-  private readonly responseBuilder = new ResponseBuilder<
-    CategoryGroup | CategoryGroup[]
-  >();
 
   @Post()
   @Roles(Role.Admin)
@@ -32,34 +29,35 @@ export class CategoryGroupsController {
       createCategoryGroupDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(201)
-      .data(res)
-      .success(true)
-      .message('Created')
-      .build();
+
+    return new Response<CategoryGroup>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Created',
+    });
   }
 
   @Get()
   async findAll() {
     const res = await this.categoryGroupsService.findAll();
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('ok')
-      .build();
+
+    return new Response<CategoryGroup[]>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const res = await this.categoryGroupsService.findOne(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('ok')
-      .build();
+
+    return new Response<CategoryGroup>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Patch(':id')
@@ -74,23 +72,25 @@ export class CategoryGroupsController {
       updateCategoryGroupDto,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('Updated')
-      .build();
+
+    return new Response<CategoryGroup>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Updated',
+    });
   }
 
   @Delete(':id')
   @Roles(Role.Admin)
   async remove(@Param('id') id: string) {
     const res = await this.categoryGroupsService.remove(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .success(true)
-      .message('Deleted')
-      .build();
+
+    return new Response<CategoryGroup>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Deleted',
+    });
   }
 }

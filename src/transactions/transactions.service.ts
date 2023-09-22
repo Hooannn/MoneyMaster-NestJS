@@ -64,23 +64,81 @@ export class TransactionsService {
     }
   }
 
-  async findAll() {
+  async findAll(query: QueryDto) {
     try {
-      const res = await this.knex<Transaction>('transactions').select();
-      return res;
+      const [res, counter] = await Promise.all([
+        this.knex<Transaction>('transactions')
+          .offset(query.offset)
+          .limit(query.limit),
+        this.knex<Transaction>('transactions').count('id'),
+      ]);
+
+      return {
+        data: res as Transaction[],
+        total: counter[0]?.count,
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async findAllValidTransactions(query: QueryDto, requestedBy: number) {
+  async findValidTransactions(query: QueryDto, requestedBy: number) {
     try {
-      const res = await this.knex<Transaction>('transactions')
-        .select('*')
-        .where('created_by', requestedBy)
-        .limit(query.limit)
-        .offset(query.offset);
-      return res;
+      const [res, counter] = await Promise.all([
+        this.knex<Transaction>('transactions')
+          .select(
+            'transactions.*',
+            'categories.name as category_name',
+            'categories.transaction_type as transaction_type',
+          )
+          .leftJoin('categories', 'transactions.category_id', 'categories.id')
+          .where('transactions.created_by', requestedBy)
+          .orderBy('transactions.id')
+          .limit(query.limit)
+          .offset(query.offset),
+        this.knex<Transaction>('transactions')
+          .where('transactions.created_by', requestedBy)
+          .count('id'),
+      ]);
+
+      return {
+        data: res as Transaction[],
+        total: counter[0]?.count,
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async findValidTransactionsByWalletId(
+    query: QueryDto,
+    requestedBy: number,
+    walletId: number,
+  ) {
+    try {
+      const [res, counter] = await Promise.all([
+        this.knex<Transaction>('transactions')
+          .select(
+            'transactions.*',
+            'categories.name as category_name',
+            'categories.transaction_type as transaction_type',
+          )
+          .leftJoin('categories', 'transactions.category_id', 'categories.id')
+          .where('transactions.created_by', requestedBy)
+          .andWhere('transactions.wallet_id', walletId)
+          .orderBy('transactions.id')
+          .limit(query.limit)
+          .offset(query.offset),
+        this.knex<Transaction>('transactions')
+          .where('created_by', requestedBy)
+          .andWhere('wallet_id', walletId)
+          .count('id'),
+      ]);
+
+      return {
+        data: res as Transaction[],
+        total: counter[0]?.count,
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }

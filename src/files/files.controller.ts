@@ -12,12 +12,11 @@ import {
 } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import ResponseBuilder from 'src/utils/response';
 import { File } from './entities/file.entity';
+import Response from 'src/response.entity';
 @Controller('files')
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
-  private readonly responseBuilder = new ResponseBuilder<File | File[]>();
 
   @Post('upload/single')
   @UseInterceptors(FileInterceptor('file'))
@@ -31,12 +30,13 @@ export class FilesController {
       folder,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(201)
-      .data(res)
-      .message('Uploaded')
-      .success(true)
-      .build();
+
+    return new Response<File>({
+      code: 201,
+      data: res,
+      message: 'Uploaded',
+      success: true,
+    });
   }
 
   @Post('upload/multiple')
@@ -51,44 +51,46 @@ export class FilesController {
       folder,
       req.auth?.userId,
     );
-    return this.responseBuilder
-      .code(201)
-      .data(res)
-      .message('Uploaded')
-      .success(true)
-      .build();
+
+    return new Response<File[]>({
+      code: 201,
+      data: res,
+      message: 'Uploaded',
+      success: true,
+    });
   }
 
   @Get()
   async findAll() {
     const res = await this.filesService.findAll();
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .message('ok')
-      .success(true)
-      .build();
+
+    return new Response<File[]>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const res = await this.filesService.findOne(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .message('ok')
-      .success(true)
-      .build();
+
+    return new Response<File>({
+      code: 200,
+      data: res,
+      success: true,
+    });
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
     const res = await this.filesService.remove(+id);
-    return this.responseBuilder
-      .code(200)
-      .data(res)
-      .message('Deleted')
-      .success(true)
-      .build();
+
+    return new Response<File>({
+      code: 200,
+      data: res,
+      success: true,
+      message: 'Deleted',
+    });
   }
 }

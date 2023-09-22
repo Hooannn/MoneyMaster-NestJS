@@ -1,11 +1,11 @@
-import { IsInt, IsOptional } from 'class-validator';
+import { IsNumberString, IsOptional } from 'class-validator';
 
 export class QueryDto {
-  @IsInt()
   @IsOptional()
+  @IsNumberString()
   offset?: number;
 
-  @IsInt()
   @IsOptional()
+  @IsNumberString()
   limit?: number;
 }

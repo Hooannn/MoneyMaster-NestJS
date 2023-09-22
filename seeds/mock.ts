@@ -10,9 +10,8 @@ import { User } from '../src/users/entities/user.entity';
 import { WalletPolicy } from '../src/wallet_policies/entities/wallet_policy.entity';
 import { WalletType } from '../src/wallet_types/entities/wallet_type.entity';
 import { Wallet } from 'src/wallets/entities/wallet.entity';
-
+import { faker } from '@faker-js/faker';
 export async function seed(knex: Knex): Promise<void> {
-  // Deletes ALL existing entries
   const tables = [
     'users',
     'notifications',
@@ -34,6 +33,7 @@ export async function seed(knex: Knex): Promise<void> {
     }
   }
 
+  const insertUsersStartTime = performance.now();
   await knex<User>('users').insert([
     {
       id: 1,
@@ -45,8 +45,26 @@ export async function seed(knex: Knex): Promise<void> {
       updated_by: 1,
       password: '',
     },
+    {
+      id: 2,
+      email: 'admin1@gmail.com',
+      roles: [Role.Admin, Role.User],
+      last_name: '',
+      first_name: 'John',
+      created_by: 2,
+      updated_by: 2,
+      password: '',
+    },
   ]);
 
+  const insertUsersEndTime = performance.now();
+  console.info(
+    `Finished inserting users in ${(
+      insertUsersEndTime - insertUsersStartTime
+    ).toFixed(2)} milliseconds`,
+  );
+
+  const insertWalletsStartTime = performance.now();
   // Inserts seed entries
   await knex<WalletPolicy>('wallet_policies').insert([
     {
@@ -78,7 +96,24 @@ export async function seed(knex: Knex): Promise<void> {
       created_by: 1,
       updated_by: 1,
     },
+    {
+      name: 'Default wallet',
+      amount_in_usd: 0.0,
+      belongs_to: 2,
+      wallet_type_id: 1,
+      created_by: 2,
+      updated_by: 2,
+    },
   ]);
+
+  const insertWalletsEndTime = performance.now();
+  console.info(
+    `Finished inserting wallets in ${(
+      insertWalletsEndTime - insertWalletsStartTime
+    ).toFixed(2)} milliseconds`,
+  );
+
+  const insertCategoriesStartTime = performance.now();
 
   const categoryGroups = [
     {
@@ -253,4 +288,35 @@ export async function seed(knex: Knex): Promise<void> {
   ].map((origin) => ({ ...origin, created_by: 1, updated_by: 1 }));
 
   await knex<Category>('categories').insert(categories);
+
+  const insertCategoriesEndTime = performance.now();
+  console.info(
+    `Finished inserting categories in ${(
+      insertCategoriesEndTime - insertCategoriesStartTime
+    ).toFixed(2)} milliseconds`,
+  );
+
+  const transactions = [];
+
+  const insertTransactionsStartTime = performance.now();
+  for (let index = 0; index < 4000; index++) {
+    const created_and_wallet_id = faker.datatype.number({ min: 1, max: 2 });
+    const transaction = {
+      created_by: created_and_wallet_id,
+      updated_by: created_and_wallet_id,
+      wallet_id: created_and_wallet_id,
+      category_id: faker.datatype.number({ min: 1, max: 29 }),
+      amount_in_usd: faker.finance.amount(),
+    };
+    transactions.push(transaction);
+  }
+  const insertTransactionsEndTime = performance.now();
+
+  await knex('transactions').insert(transactions);
+
+  console.info(
+    `Finished inserting transactions in ${(
+      insertTransactionsEndTime - insertTransactionsStartTime
+    ).toFixed(2)} milliseconds`,
+  );
 }

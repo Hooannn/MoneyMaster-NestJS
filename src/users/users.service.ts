@@ -15,6 +15,7 @@ import { compareSync, hashSync } from 'bcrypt';
 import config from 'src/configs';
 import Redis from 'ioredis';
 import { WalletsService } from 'src/wallets/wallets.service';
+import { QueryDto } from 'src/query.dto';
 
 @Injectable()
 export class UsersService {
@@ -76,12 +77,21 @@ export class UsersService {
     }
   }
 
-  async findAll() {
+  async findAll(query: QueryDto) {
     try {
-      const res = await this.knex<User>('users')
-        .column(this.SELECTED_COLUMNS)
-        .select();
-      return res;
+      const [res, counter] = await Promise.all([
+        this.knex<User>('users')
+          .column(this.SELECTED_COLUMNS)
+          .offset(query.offset)
+          .limit(query.limit),
+
+        this.knex<User>('users').count('id'),
+      ]);
+
+      return {
+        data: res,
+        total: counter[0].count,
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
@@ -154,7 +164,7 @@ export class UsersService {
         parseInt(config.SALTED_PASSWORD),
       );
 
-      const res = await this.knex<User>('users').where('id', id).update(
+      const [res] = await this.knex<User>('users').where('id', id).update(
         {
           password: newPassword,
           updated_by: id,

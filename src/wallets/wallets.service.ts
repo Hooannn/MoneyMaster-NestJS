@@ -4,7 +4,7 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-import { CreateWalletDto } from './dto/create-wallet.dto';
+import { AdminCreateWalletDto, CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
@@ -38,10 +38,33 @@ export class WalletsService {
     }
   }
 
-  async findAll() {
+  async adminCreate(createWalletDto: AdminCreateWalletDto, createdBy: number) {
     try {
-      const res = await this.knex<Wallet>('wallets').select();
+      const [res] = await this.knex<Wallet>('wallets').insert(
+        {
+          ...createWalletDto,
+          updated_by: createdBy,
+          created_by: createdBy,
+        },
+        '*',
+      );
       return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async findAll(query: QueryDto) {
+    try {
+      const [res, counter] = await Promise.all([
+        this.knex<Wallet>('wallets').offset(query.offset).limit(query.limit),
+        this.knex<Wallet>('wallets').count('id'),
+      ]);
+
+      return {
+        data: res,
+        total: counter[0]?.count,
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
@@ -49,11 +72,20 @@ export class WalletsService {
 
   async findAllValidWallets(query: QueryDto, requestedBy: number) {
     try {
-      const res = await this.knex<Wallet>('wallets')
-        .where('belongs_to', requestedBy)
-        .offset(query.offset)
-        .limit(query.limit);
-      return res;
+      const [res, counter] = await Promise.all([
+        this.knex<Wallet>('wallets')
+          .where('belongs_to', requestedBy)
+          .offset(query.offset)
+          .limit(query.limit),
+        this.knex<Wallet>('wallets')
+          .where('belongs_to', requestedBy)
+          .count('id'),
+      ]);
+
+      return {
+        data: res,
+        total: counter[0]?.count,
+      };
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
@@ -109,12 +141,37 @@ export class WalletsService {
     }
   }
 
+  async adminUpdate(
+    id: number,
+    updateWalletDto: UpdateWalletDto,
+    updatedBy: number,
+  ) {
+    try {
+      const [res] = await this.knex<Wallet>('wallets')
+        .where('id', id)
+        .update({ ...updateWalletDto, updated_by: updatedBy }, '*');
+
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async remove(id: number, requestedBy: number) {
     try {
       const [res] = await this.knex<Wallet>('wallets')
         .where('id', id)
         .andWhere('belongs_to', requestedBy)
         .del('*');
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async adminRemove(id: number) {
+    try {
+      const [res] = await this.knex<Wallet>('wallets').where('id', id).del('*');
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
