@@ -11,15 +11,12 @@ import { InjectKnex } from 'nestjs-knex';
 import { Knex } from 'knex';
 import { TransactionFiles } from './entities/transaction_files.entity';
 import { WalletsService } from 'src/wallets/wallets.service';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
-import { TransactionType } from 'src/categories/entities/category.entity';
-import { CategoriesService } from 'src/categories/categories.service';
+import { QueryDto } from 'src/query.dto';
 @Injectable()
 export class TransactionsService {
   constructor(
     @InjectKnex() private readonly knex: Knex,
     private readonly walletsService: WalletsService,
-    private readonly categoriesService: CategoriesService,
   ) {}
 
   async clear() {
@@ -32,9 +29,14 @@ export class TransactionsService {
 
   async create(createTransactionDto: CreateTransactionDto, createdBy: number) {
     try {
-      await this.validateWallet(createdBy, createTransactionDto.wallet_id);
+      await this.walletsService.findValidWallet(
+        createTransactionDto.wallet_id,
+        createdBy,
+      );
+
       const fileIds = createTransactionDto.file_ids;
       delete createTransactionDto.file_ids;
+
       const [res] = await this.knex<Transaction>('transactions').insert(
         {
           ...createTransactionDto,
@@ -54,7 +56,7 @@ export class TransactionsService {
         );
       }
 
-      await this.updateWalletBalance(res);
+      await this.walletsService.updateWalletBalance(res);
 
       return res;
     } catch (error) {
@@ -65,6 +67,19 @@ export class TransactionsService {
   async findAll() {
     try {
       const res = await this.knex<Transaction>('transactions').select();
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async findAllValidTransactions(query: QueryDto, requestedBy: number) {
+    try {
+      const res = await this.knex<Transaction>('transactions')
+        .select('*')
+        .where('created_by', requestedBy)
+        .limit(query.limit)
+        .offset(query.offset);
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -83,18 +98,34 @@ export class TransactionsService {
     }
   }
 
+  async findValidTransaction(transactionId: number, requestedBy: number) {
+    const res = await this.knex<Transaction>('transactions')
+      .where('id', transactionId)
+      .andWhere('created_by', requestedBy)
+      .first();
+
+    if (!res) throw new ForbiddenException();
+    return res;
+  }
+
   async update(
     id: number,
     updateTransactionDto: UpdateTransactionDto,
     updatedBy: number,
   ) {
     try {
-      const currentTransaction = await this.findOne(id);
-      await this.validateWallet(updatedBy, currentTransaction.wallet_id);
-      await this.revertWalletBalance(currentTransaction);
+      const currentTransaction = await this.findValidTransaction(id, updatedBy);
+
+      await this.walletsService.findValidWallet(
+        currentTransaction.wallet_id,
+        updatedBy,
+      );
+
+      await this.walletsService.revertWalletBalance(currentTransaction);
 
       const fileIds = updateTransactionDto.file_ids;
       delete updateTransactionDto.file_ids;
+
       const [res] = await this.knex<Transaction>('transactions')
         .where('id', id)
         .update({ ...updateTransactionDto, updated_by: updatedBy }, '*');
@@ -111,7 +142,7 @@ export class TransactionsService {
         );
       }
 
-      await this.updateWalletBalance(res);
+      await this.walletsService.updateWalletBalance(res);
 
       return res;
     } catch (error) {
@@ -119,61 +150,20 @@ export class TransactionsService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number, requestedBy: number) {
     try {
       const [res] = await this.knex<Transaction>('transactions')
         .where('id', id)
+        .andWhere('created_by', requestedBy)
         .del('*');
 
-      await this.revertWalletBalance(res);
+      if (!res) throw new ForbiddenException();
+
+      await this.walletsService.revertWalletBalance(res);
 
       return res;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  private async validateWallet(
-    userId: number,
-    walletId: number,
-  ): Promise<Wallet> {
-    const wallet = await this.walletsService.findOne(walletId);
-    const isValid = wallet.belongs_to === userId;
-    if (!isValid) throw new ForbiddenException();
-    return wallet;
-  }
-
-  private async revertWalletBalance(transaction: Transaction) {
-    const category = await this.categoriesService.findOne(
-      transaction.category_id,
-    );
-    const transactionType = category?.transaction_type;
-    const walletId = transaction.wallet_id;
-    const amount = transaction.amount_in_usd;
-    switch (transactionType) {
-      case TransactionType.Expense:
-        await this.walletsService.deposit(walletId, amount);
-        break;
-      case TransactionType.Income:
-        await this.walletsService.withdraw(walletId, amount);
-        break;
-    }
-  }
-
-  private async updateWalletBalance(transaction: Transaction) {
-    const category = await this.categoriesService.findOne(
-      transaction.category_id,
-    );
-    const transactionType = category?.transaction_type;
-    const walletId = transaction.wallet_id;
-    const amount = transaction.amount_in_usd;
-    switch (transactionType) {
-      case TransactionType.Expense:
-        await this.walletsService.withdraw(walletId, amount);
-        break;
-      case TransactionType.Income:
-        await this.walletsService.deposit(walletId, amount);
-        break;
     }
   }
 }

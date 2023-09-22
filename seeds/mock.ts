@@ -75,7 +75,6 @@ export async function seed(knex: Knex): Promise<void> {
       amount_in_usd: 0.0,
       belongs_to: 1,
       wallet_type_id: 1,
-      wallet_policy_id: 1,
       created_by: 1,
       updated_by: 1,
     },

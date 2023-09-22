@@ -8,7 +8,7 @@ import config from './configs';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Money Master')

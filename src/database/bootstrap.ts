@@ -70,8 +70,6 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
           table.foreign('belongs_to').references('users.id');
           table.integer('wallet_type_id').unsigned().notNullable();
           table.foreign('wallet_type_id').references('wallet_types.id');
-          table.integer('wallet_policy_id').unsigned().notNullable();
-          table.foreign('wallet_policy_id').references('wallet_policies.id');
           makeDefaultColumns(table);
         });
       },
