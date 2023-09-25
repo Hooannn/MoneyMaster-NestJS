@@ -34,6 +34,17 @@ export class CategoriesService {
     }
   }
 
+  async findCategoriesByGroup(groupId: number) {
+    try {
+      const res = await this.knex<Category>('categories').where(
+        'group_id',
+        groupId,
+      );
+      return res;
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
   async findOne(id: number) {
     try {
       const res = await this.knex<Category>('categories')

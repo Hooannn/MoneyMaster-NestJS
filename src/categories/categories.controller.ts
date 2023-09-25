@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Req,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -37,6 +38,21 @@ export class CategoriesController {
   @Get()
   async findAll() {
     const res = await this.categoriesService.findAll();
+
+    return new Response<Category[]>({
+      code: 200,
+      data: res,
+      success: true,
+    });
+  }
+
+  @Get('/category_groups/:categoryGroupId')
+  async findCategoriesByGroup(
+    @Param('categoryGroupId', ParseIntPipe) categoryGroupId: number,
+  ) {
+    const res = await this.categoriesService.findCategoriesByGroup(
+      categoryGroupId,
+    );
 
     return new Response<Category[]>({
       code: 200,

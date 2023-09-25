@@ -22,17 +22,6 @@ import Response from 'src/response.entity';
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
-  @Delete()
-  @Roles(Role.Admin)
-  async clear() {
-    await this.transactionsService.clear();
-    return new Response<Transaction>({
-      code: 200,
-      success: true,
-      message: 'Done',
-    });
-  }
-
   @Post()
   async create(@Req() req, @Body() createDto: CreateTransactionDto) {
     const res = await this.transactionsService.create(
