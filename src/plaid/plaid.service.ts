@@ -40,6 +40,7 @@ export class PlaidService {
         products: PlaidService.PLAID_PRODUCTS,
         country_codes: PlaidService.PLAID_COUNTRY_CODES,
         language: 'en',
+        webhook: 'https://moneymaster.onrender.com/webhook/plaid',
       };
 
       if (PlaidService.PLAID_REDIRECT_URI !== '') {
@@ -49,6 +50,7 @@ export class PlaidService {
       const createTokenResponse = await this.plaidClient.linkTokenCreate(
         configs,
       );
+
       return createTokenResponse.data;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
