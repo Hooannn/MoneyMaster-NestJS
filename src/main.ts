@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-
+  app.enableCors();
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Money Master')
     .setDescription('The money master API description')

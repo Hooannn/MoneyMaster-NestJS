@@ -27,6 +27,7 @@ import { FilesModule } from './files/files.module';
 import { BullModule } from '@nestjs/bull';
 import { sleep } from './utils/sleep';
 import { WebhookModule } from './webhook/webhook.module';
+import { PlaidModule } from './plaid/plaid.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { WebhookModule } from './webhook/webhook.module';
     WalletTypesModule,
     FilesModule,
     WebhookModule,
+    PlaidModule,
   ],
   controllers: [AppController],
   providers: [

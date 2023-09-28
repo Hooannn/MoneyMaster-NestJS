@@ -30,6 +30,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.1.11",
+    "plaid": "^14.0.0",
     "bcrypt": "^5.0.1",
     "cloudinary": "^1.40.0",
     "datauri": "4.1.0",
