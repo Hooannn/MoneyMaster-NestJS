@@ -9,12 +9,14 @@ import {
 import config from 'src/configs';
 import { UsersService } from 'src/users/users.service';
 import { SetAccessTokenDto } from './dto/set-access-token.dto';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class PlaidService {
   constructor(
     @Inject('PLAID') private readonly plaidClient: PlaidApi,
     private readonly usersService: UsersService,
+    private readonly logger: PinoLogger,
   ) {}
 
   public static PLAID_PRODUCTS = (
@@ -116,9 +118,7 @@ export class PlaidService {
       });
 
       const accessToken = tokenResponse.data.access_token;
-      if (PlaidService.PLAID_PRODUCTS.includes(Products.Transfer)) {
-        //const transfer = await authorizeAndCreateTransfer(accessToken);
-      }
+      this.logger.info('=======GETACCESSTOKEN=======', { tokenResponse });
 
       delete tokenResponse.data.access_token;
       return tokenResponse.data;
