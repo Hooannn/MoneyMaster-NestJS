@@ -118,6 +118,10 @@ export class AppModule implements OnModuleInit {
 
   async onModuleInit() {
     //await this.createDB();
-    //await this.dropDB();
+    /*
+    for (let i = 0; i < 10; i++) {
+      await this.dropDB();
+    }
+    */
   }
 }

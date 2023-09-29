@@ -74,6 +74,13 @@ export async function seed(knex: Knex): Promise<void> {
       created_by: 1,
       updated_by: 1,
     },
+    {
+      id: 2,
+      name: 'Plaid policy',
+      description: 'This is a Plaid wallet policy',
+      created_by: 1,
+      updated_by: 1,
+    },
   ]);
 
   await knex<WalletType>('wallet_types').insert([
@@ -82,6 +89,14 @@ export async function seed(knex: Knex): Promise<void> {
       name: 'Default',
       policy_id: 1,
       description: 'This is a default wallet type',
+      created_by: 1,
+      updated_by: 1,
+    },
+    {
+      id: 2,
+      name: 'Plaid',
+      policy_id: 2,
+      description: 'This is a Plaid wallet type',
       created_by: 1,
       updated_by: 1,
     },

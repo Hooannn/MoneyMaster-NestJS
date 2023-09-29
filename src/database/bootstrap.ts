@@ -73,7 +73,20 @@ const bootstrapDatabase = async (knex: Knex, logger: PinoLogger) => {
           table.foreign('belongs_to').references('users.id');
           table.integer('wallet_type_id').unsigned().notNullable();
           table.foreign('wallet_type_id').references('wallet_types.id');
+          table.jsonb('attrs').nullable();
           makeDefaultColumns(table);
+        });
+      },
+    },
+    // Plaid provider table
+    {
+      key: 'plaid_provider',
+      make: async () => {
+        return await knex.schema.createTable('plaid_provider', (table) => {
+          table.string('item_id', 255).notNullable().primary();
+          table.string('access_token', 255).notNullable();
+          table.integer('user_id', 255).notNullable();
+          table.timestamps(true, true);
         });
       },
     },

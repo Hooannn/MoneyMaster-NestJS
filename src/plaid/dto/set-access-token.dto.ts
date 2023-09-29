@@ -28,8 +28,10 @@ export class SetAccessTokenDto {
   @IsString()
   readonly public_token: string;
 
+  /*
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PlaidAccount)
   readonly accounts: PlaidAccount[];
+  */
 }

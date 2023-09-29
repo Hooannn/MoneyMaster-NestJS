@@ -4,6 +4,8 @@ import config from 'src/configs';
 import { UsersService } from 'src/users/users.service';
 import { SetAccessTokenDto } from './dto/set-access-token.dto';
 import { PinoLogger } from 'nestjs-pino';
+import { InjectKnex } from 'nestjs-knex';
+import { Knex } from 'knex';
 
 @Injectable()
 export class PlaidService {
@@ -11,8 +13,11 @@ export class PlaidService {
     @Inject('PLAID') private readonly plaidClient: PlaidApi,
     private readonly usersService: UsersService,
     private readonly logger: PinoLogger,
+    @InjectKnex() private readonly knex: Knex,
   ) {}
-
+  public static WEBHOOK_URL =
+    'https://9921-14-169-57-88.ngrok-free.app/webhook/plaid' ||
+    'https://moneymaster.onrender.com/webhook/plaid';
   public static PLAID_PRODUCTS = (
     config.PLAID_PRODUCTS || Products.Transactions
   ).split(',') as Products[];
@@ -36,7 +41,7 @@ export class PlaidService {
         products: PlaidService.PLAID_PRODUCTS,
         country_codes: PlaidService.PLAID_COUNTRY_CODES,
         language: 'en',
-        webhook: 'https://moneymaster.onrender.com/webhook/plaid',
+        webhook: PlaidService.WEBHOOK_URL,
       };
 
       if (PlaidService.PLAID_REDIRECT_URI !== '') {
@@ -58,10 +63,14 @@ export class PlaidService {
       const tokenResponse = await this.plaidClient.itemPublicTokenExchange({
         public_token: setAccessTokenDto.public_token,
       });
-      console.log({ tokenResponse });
-      const accounts = setAccessTokenDto.accounts;
       const accessToken = tokenResponse.data.access_token;
       const itemId = tokenResponse.data.item_id;
+
+      await this.knex('plaid_provider').insert({
+        item_id: itemId,
+        access_token: accessToken,
+        user_id: userId,
+      });
 
       delete tokenResponse.data.access_token;
       delete tokenResponse.data.item_id;

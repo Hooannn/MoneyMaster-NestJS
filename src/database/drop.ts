@@ -10,6 +10,7 @@ const dropDatabase = async (knex: Knex, logger: PinoLogger) => {
     'transactions',
     'wallet_types',
     'wallet_policies',
+    'plaid_provider',
     'users',
     'wallets',
     'notifications',

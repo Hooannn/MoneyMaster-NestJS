@@ -13,6 +13,7 @@ import { Transaction } from 'src/transactions/entities/transaction.entity';
 import { TransactionType } from 'src/categories/entities/category.entity';
 import { CategoriesService } from 'src/categories/categories.service';
 import { QueryDto } from 'src/query.dto';
+import { AccountBase } from 'plaid';
 
 @Injectable()
 export class WalletsService {
@@ -240,5 +241,35 @@ export class WalletsService {
         await this.deposit(walletId, amount, transaction.created_by);
         break;
     }
+  }
+
+  async createPlaidWallets(plaidAccounts: AccountBase[], userId: number) {
+    const checkExistAndCreate = async (account: AccountBase) => {
+      const existed = await this.knex<Wallet>('wallets')
+        .select('id')
+        .where('belongs_to', userId)
+        .andWhereRaw("attrs->>'plaid_account_id' = ?", account.account_id)
+        .first();
+      if (existed) return existed;
+      const [newWallet] = await this.knex<Wallet>('wallets').insert(
+        {
+          name: account.name,
+          description: account.official_name,
+          belongs_to: userId,
+          wallet_type_id: 2,
+          currency_code: account.balances?.iso_currency_code ?? 'USD',
+          amount_in_usd: account.balances?.available ?? 0,
+          attrs: {
+            plaid_account_id: account.account_id,
+          },
+        },
+        'id',
+      );
+      return newWallet;
+    };
+
+    return await Promise.all(
+      plaidAccounts.map((account) => checkExistAndCreate(account)),
+    );
   }
 }

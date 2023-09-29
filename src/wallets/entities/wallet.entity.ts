@@ -9,4 +9,7 @@ export class Wallet extends DefaultEntity {
   readonly amount_in_usd: number;
   readonly wallet_type_id: number;
   readonly belongs_to: number;
+  readonly attrs?: {
+    plaid_account_id?: string;
+  };
 }
