@@ -15,9 +15,7 @@ export class PlaidService {
     private readonly logger: PinoLogger,
     @InjectKnex() private readonly knex: Knex,
   ) {}
-  public static WEBHOOK_URL =
-    'https://9921-14-169-57-88.ngrok-free.app/webhook/plaid' ||
-    'https://moneymaster.onrender.com/webhook/plaid';
+  public static WEBHOOK_URL = 'https://moneymaster.onrender.com/webhook/plaid';
   public static PLAID_PRODUCTS = (
     config.PLAID_PRODUCTS || Products.Transactions
   ).split(',') as Products[];
