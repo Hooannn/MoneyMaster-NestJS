@@ -23,20 +23,6 @@ export class PlaidController {
     });
   }
 
-  @Post('create_link_token_for_payment')
-  async createLinkTokenForPayment(@Req() req) {
-    const res = await this.plaidService.createLinkTokenForPayment(
-      req.auth?.userId,
-    );
-
-    return new Response<LinkTokenCreateResponse>({
-      code: 201,
-      message: 'Created',
-      success: true,
-      data: res,
-    });
-  }
-
   @Post('set_access_token')
   async setAccessToken(
     @Body() setAccessTokenDto: SetAccessTokenDto,

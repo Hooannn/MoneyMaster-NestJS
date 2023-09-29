@@ -1,11 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import {
-  CountryCode,
-  LinkTokenCreateRequest,
-  PaymentAmountCurrency,
-  PlaidApi,
-  Products,
-} from 'plaid';
+import { CountryCode, LinkTokenCreateRequest, PlaidApi, Products } from 'plaid';
 import config from 'src/configs';
 import { UsersService } from 'src/users/users.service';
 import { SetAccessTokenDto } from './dto/set-access-token.dto';
@@ -59,68 +53,18 @@ export class PlaidService {
     }
   }
 
-  async createLinkTokenForPayment(userId: number) {
-    try {
-      const createRecipientResponse =
-        await this.plaidClient.paymentInitiationRecipientCreate({
-          name: 'Harry Potter',
-          iban: 'GB33BUKB20201555555555',
-          address: {
-            street: ['4 Privet Drive'],
-            city: 'Little Whinging',
-            postal_code: '11111',
-            country: 'GB',
-          },
-        });
-      const recipientId = createRecipientResponse.data.recipient_id;
-
-      const createPaymentResponse =
-        await this.plaidClient.paymentInitiationPaymentCreate({
-          recipient_id: recipientId,
-          reference: 'paymentRef',
-          amount: {
-            value: 1.23,
-            currency: 'GBP' as PaymentAmountCurrency,
-          },
-        });
-      const paymentId = createPaymentResponse.data.payment_id;
-
-      const configs: LinkTokenCreateRequest = {
-        client_name: 'Money Master',
-        user: {
-          client_user_id: userId.toString(),
-        },
-        country_codes: PlaidService.PLAID_COUNTRY_CODES,
-        language: 'en',
-        products: [Products.PaymentInitiation],
-        payment_initiation: {
-          payment_id: paymentId,
-        },
-      };
-
-      if (PlaidService.PLAID_REDIRECT_URI !== '') {
-        configs.redirect_uri = PlaidService.PLAID_REDIRECT_URI;
-      }
-
-      const createTokenResponse = await this.plaidClient.linkTokenCreate(
-        configs,
-      );
-      return createTokenResponse.data;
-    } catch (error) {
-      throw new HttpException(error, HttpStatus.BAD_REQUEST);
-    }
-  }
-
   async setAccessToken(setAccessTokenDto: SetAccessTokenDto, userId: number) {
     try {
       const tokenResponse = await this.plaidClient.itemPublicTokenExchange({
         public_token: setAccessTokenDto.public_token,
       });
-
+      console.log({ tokenResponse });
+      const accounts = setAccessTokenDto.accounts;
       const accessToken = tokenResponse.data.access_token;
-      this.logger.info('=======GETACCESSTOKEN=======', { tokenResponse });
+      const itemId = tokenResponse.data.item_id;
 
       delete tokenResponse.data.access_token;
+      delete tokenResponse.data.item_id;
       return tokenResponse.data;
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
