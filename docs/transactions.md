@@ -2,43 +2,39 @@
 graph TD
 
 subgraph User
-A[Client] -->|1. Initiate Create Transaction| B[POST /transactions]
-B -->|2. Send CreateTransactionDto| C[TransactionsService.create]
-C -->|3. Find Valid Wallet| D[WalletsService.findValidWallet]
-D -->|4. Validate Wallet| C
-C -->|5. Extract File IDs| E
-E -->|6. Create Transaction Record| F[Knex Transaction Insert]
-F -->|7. Insert Transaction Files| G[Knex TransactionFiles Insert]
-G -->|8. Update Wallet Balance| H[WalletsService.updateWalletBalance]
-H -->|9. Return Created Transaction| C
-C -->|10. Return Response| B
+  A[Client] -->|1. Initiate Create Transaction| B[POST /transactions]
+  B -->|2. Send CreateTransactionDto| C[TransactionsService.create]
+  C -->|3. Validate Wallet| D[WalletsService.findValidWallet]
+  D -->|4. Create Transaction Record| E[Knex Transaction Insert]
+  E -->|5. Extract File IDs| F[File IDs Extracted]
+  F -->|6. Insert Transaction Files| G[Knex TransactionFiles Insert]
+  G -->|7. Update Wallet Balance| H[WalletsService.updateWalletBalance]
+  H -->|8. Return Created Transaction| I[Created Transaction]
+  I -->|9. Return Response| A
 end
 
 subgraph User
-I[Client] -->|1. Initiate Update Transaction| J[PUT /transactions/:id]
-J -->|2. Send UpdateTransactionDto| K[TransactionsService.update]
-K -->|3. Find Valid Transaction| L[TransactionsService.findValidTransaction]
-L -->|4. Validate Transaction| K
-K -->|5. Find Valid Wallet| M[WalletsService.findValidWallet]
-M -->|6. Validate Wallet| K
-K -->|7. Revert Wallet Balance| N[WalletsService.revertWalletBalance]
-N -->|8. Extract File IDs| O
-O -->|9. Update Transaction Record| P[Knex Transaction Update]
-P -->|10. Delete Transaction Files| Q[Knex TransactionFiles Delete]
-Q -->|11. Insert Transaction Files| R[Knex TransactionFiles Insert]
-R -->|12. Update Wallet Balance| S[WalletsService.updateWalletBalance]
-S -->|13. Return Updated Transaction| K
-K -->|14. Return Response| I
+  J[Client] -->|1. Initiate Update Transaction| K[PUT /transactions/:id]
+  K -->|2. Send UpdateTransactionDto| L[TransactionsService.update]
+  L -->|3. Find Valid Transaction| M[TransactionsService.findValidTransaction]
+  M -->|4. Validate Transaction| N[Transaction Validated]
+  N -->|5. Find Valid Wallet| O[WalletsService.findValidWallet]
+  O -->|6. Revert Wallet Balance| P[WalletsService.revertWalletBalance]
+  P -->|7. Update Transaction Record| Q[Knex Transaction Update]
+  Q -->|8. Delete Transaction Files| R[Knex TransactionFiles Delete]
+  R -->|9. Insert Transaction Files| S[Knex TransactionFiles Insert]
+  S -->|10. Update Wallet Balance| T[WalletsService.updateWalletBalance]
+  T -->|11. Return Updated Transaction| U[Updated Transaction]
+  U -->|12. Return Response| J
 end
 
 subgraph User
-T[Client] -->|1. Initiate Remove Transaction| U[DELETE /transactions/:id]
-U -->|2. Send Requested By| V[TransactionsService.remove]
-V -->|3. Find Transaction| W[Knex Transaction Delete]
-W -->|4. Validate Transaction Ownership| X[Forbidden Exception]
-X -->|5. Revert Wallet Balance| Y[WalletsService.revertWalletBalance]
-Y -->|6. Return Removed Transaction| V
-V -->|7. Return Response| T
+  V[Client] -->|1. Initiate Remove Transaction| W[DELETE /transactions/:id]
+  W -->|2. Send Requested By| X[TransactionsService.remove]
+  X -->|3. Find Transaction| Y[Knex Transaction Delete]
+  Y -->|4. Validate Transaction Ownership| Z[Ownership Validated]
+  Z -->|5. Revert Wallet Balance| AA[WalletsService.revertWalletBalance]
+  AA -->|6. Return Removed Transaction| BB[Removed Transaction]
+  BB -->|7. Return Response| V
 end
-s
 ```
